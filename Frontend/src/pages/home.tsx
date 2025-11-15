@@ -99,10 +99,10 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                     <div className="flex justify-between items-center h-20">
                         {/* Logo */}
                         <div className="flex items-center space-x-3">
-                            <div className="bg-gradient-to-br from-blue-500 to-gray-400 p-2 rounded-lg">
+                            <div className="bg-linear-to-br from-blue-500 to-gray-400 p-2 rounded-lg">
                                 <Sparkles className="w-6 h-6 text-white" />
                             </div>
-                            <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-gray-400 bg-clip-text text-transparent">
+                            <span className="text-2xl font-bold bg-linear-to-br from-blue-500 to-gray-400 bg-clip-text text-transparent">
                                 InterviewAI
                             </span>
                         </div>
@@ -124,7 +124,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                             <button onClick={openSignInModal} className="px-6 py-2.5 rounded-lg border-2 border-blue-400 text-blue-400 hover:bg-blue-400/10 transition-all font-medium">
                                 Sign In
                             </button>
-                            <button onClick={openSignUpModal} className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-900 transition-all shadow-lg shadow-blue-500/30 font-medium">
+                            <button onClick={openSignUpModal} className="px-6 py-2.5 rounded-lg bg-linear-to-br from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-900 transition-all shadow-lg shadow-blue-500/30 font-medium">
                                 Sign Up
                             </button>
                         </div>
@@ -174,7 +174,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                             <button onClick={openSignInModal} className="w-full py-3 rounded-lg border-2 border-blue-400 text-blue-400 hover:bg-blue-400/10 transition-all font-medium">
                                 Sign In
                             </button>
-                            <button onClick={openSignUpModal} className="w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-900 transition-all font-medium">
+                            <button onClick={openSignUpModal} className="w-full py-3 rounded-lg bg-linear-to-br from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-900 transition-all font-medium">
                                 Sign Up
                             </button>
                         </div>
@@ -200,7 +200,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </AuthModal>
 
             {/* Hero Section */}
-            <section ref={heroRef} id="home" className="min-h-[calc(100vh-68px)] flex items-center pt-10 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
+            <section ref={heroRef} id="home" className="min-h-[calc(100vh-68px)] flex items-center pt-20 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
                 {/* Spotlight applied directly to the container as per the demo structure */}
                 <Spotlight parentRef={heroRef} color="#4b9fff" className="mix-blend-screen" />
                 <div className="max-w-7xl mx-auto w-full relative z-10">
@@ -209,7 +209,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                         <div>
                             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
                                 Master Your Next
-                                <span className="block bg-gradient-to-r from-blue-500 via-gray-400 to-blue-500 bg-clip-text text-transparent">
+                                <span className="block bg-linear-to-br from-blue-500 via-gray-400 to-blue-500 bg-clip-text text-transparent">
                                     Interview with AI
                                 </span>
                             </h1>
@@ -218,7 +218,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                             </p>
                             <button
                                 onClick={openSignUpModal}
-                                className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-xl shadow-blue-600/30 flex items-center gap-2 text-lg font-semibold transform hover:scale-[1.03]"
+                                className="px-8 py-4 rounded-xl bg-linear-to-br from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-xl shadow-blue-600/30 flex items-center gap-2 text-lg font-semibold transform hover:scale-[1.03]"
                             >
                                 Start Free Trial
                                 <ChevronRight className="w-5 h-5" />
@@ -265,7 +265,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-gradient-to-br from-blue-900/50 to-gray-900/50 rounded-2xl p-8 border border-gray-200/30">
+                        <div className="bg-linear-to-br from-blue-900/50 to-gray-900/50 rounded-2xl p-8 border border-gray-200/30">
                             <div className="space-y-6">
                                 <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6">
                                     <div className="text-3xl font-bold text-blue-400 mb-2">2020</div>
@@ -300,7 +300,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                         {features.map((feature: Feature, index: number) => (
                             <div
                                 key={index}
-                                className="bg-gradient-to-br from-blue-900/50 to-gray-900/50 backdrop-blur-sm rounded-xl p-8 border border-blue-500/20 hover:border-gray-500/50 transition-all duration-300 hover:transform hover:scale-105"
+                                className="bg-linear-to-br from-blue-900/50 to-gray-900/50 backdrop-blur-sm rounded-xl p-8 border border-blue-500/20 hover:border-gray-500/50 transition-all duration-300 hover:transform hover:scale-105"
                             >
                                 <div className="bg-linear-to-br from-blue-500 to-gray-400 w-16 h-16 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-500/50">
                                     {feature.icon}
@@ -314,7 +314,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </section>
 
             {/* How It Works */}
-            <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-900/50 to-gray-900/50 rounded-2xl border border-gray-200/30">
+            <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-blue-900/50 to-gray-900/50 rounded-2xl border border-gray-200/30">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl sm:text-5xl font-bold mb-4">
@@ -367,7 +367,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                 {/* Left Side */}
                 <div className="flex items-center space-x-3">
                     {/* Logo */}
-                    <div className="bg-gradient-to-br from-blue-500 to-gray-400 p-2 rounded-lg">
+                    <div className="bg-linear-to-br from-blue-500 to-gray-400 p-2 rounded-lg">
                         <Sparkles className="w-6 h-6 text-white" />
                     </div>
 
