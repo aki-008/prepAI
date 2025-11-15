@@ -92,7 +92,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
     const heroRef = useRef<HTMLDivElement>(null);
 
     return (
-        <div className="w-full min-h-screen bg-gradient-to-br from-blue-900 to-gray-400 text-white overflow-x-hidden">
+        <div className="w-full min-h-screen bg-linear-to-br from-blue-900 to-gray-400 text-white overflow-x-hidden">
             {/* Navigation Bar */}
             <nav className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-slate-900/95 backdrop-blur-md shadow-xl' : 'bg-slate-900/80 backdrop-blur-sm'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -302,7 +302,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                                 key={index}
                                 className="bg-gradient-to-br from-blue-900/50 to-gray-900/50 backdrop-blur-sm rounded-xl p-8 border border-blue-500/20 hover:border-gray-500/50 transition-all duration-300 hover:transform hover:scale-105"
                             >
-                                <div className="bg-gradient-to-br from-blue-500 to-gray-400 w-16 h-16 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-500/50">
+                                <div className="bg-linear-to-br from-blue-500 to-gray-400 w-16 h-16 rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-blue-500/50">
                                     {feature.icon}
                                 </div>
                                 <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
@@ -314,7 +314,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </section>
 
             {/* How It Works */}
-            <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-black/40">
+            <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-900/50 to-gray-900/50 rounded-2xl border border-gray-200/30">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-16">
                         <h2 className="text-4xl sm:text-5xl font-bold mb-4">
@@ -324,14 +324,18 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                             Get started in three simple steps
                         </p>
                     </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {steps.map((item: Step, index: number) => (
                             <div key={index} className="relative text-center">
-                                <div className="text-7xl font-bold text-blue-500/20 mb-4">{item.step}</div>
+                                <div className="text-7xl font-bold text-white mb-4">
+                                    {item.step}
+                                </div>
                                 <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
                                 <p className="text-gray-400">{item.desc}</p>
+
                                 {index < 2 && (
-                                    <ChevronRight className="hidden md:block absolute top-12 -right-12 w-8 h-8 text-blue-500/50" />
+                                    <ChevronRight className="hidden md:block absolute top-12 -right-12 w-8 h-8 text-white" />
                                 )}
                             </div>
                         ))}
@@ -339,8 +343,9 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                 </div>
             </section>
 
+
             {/* CTA Section */}
-            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-gray-900/50 to-blue-700/50">
+            <section className="py-20 px-4 sm:px-6 lg:px-8 bg-black">
                 <div className="max-w-4xl mx-auto text-center">
                     <h2 className="text-4xl sm:text-5xl font-bold mb-6">
                         Ready to Ace Your Interview?
@@ -350,7 +355,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
                     </p>
                     <button
                         onClick={openSignUpModal}
-                        className="px-10 py-5 rounded-lg bg-gradient-to-r from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 transition shadow-lg shadow-blue-500/50 text-lg font-semibold"
+                        className="px-10 py-5 rounded-lg bg-linear-to-r from-blue-400 to-blue-700 hover:from-blue-600 hover:to-blue-900 transition shadow-lg shadow-blue-500/50 text-lg font-semibold"
                     >
                         Start Your Free Trial Today
                     </button>
@@ -358,13 +363,43 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </section>
 
             {/* Footer */}
-            <footer className="py-12 px-4 sm:px-6 lg:px-8 bg-black">
-                <div className="max-w-7xl mx-auto text-center text-gray-400">
-                    <div className="flex items-center justify-center space-x-2 mb-4">
-                        <Sparkles className="w-6 h-6 text-blue-400" />
-                        <span className="text-xl font-bold text-white">InterviewAI</span>
+            <footer className="w-full py-6 px-6 bg-slate-900/95 backdrop-blur-md text-gray-200 flex flex-col sm:flex-row items-center justify-between shadow-inner">
+                {/* Left Side */}
+                <div className="flex items-center space-x-3">
+                    {/* Logo */}
+                    <div className="bg-gradient-to-br from-blue-500 to-gray-400 p-2 rounded-lg">
+                        <Sparkles className="w-6 h-6 text-white" />
                     </div>
-                    <p>&copy; 2025 InterviewAI. All rights reserved.</p>
+
+                    <p className="text-sm">
+                        Copyright © {new Date().getFullYear()} — All rights reserved
+                    </p>
+                </div>
+
+                {/* Right Side */}
+                <div className="flex items-center gap-5 mt-4 sm:mt-0">
+                    {/* Twitter */}
+                    <a href="#" className="hover:text-blue-400 transition">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="fill-current">
+                            <path d="M24 4.557a9.93 9.93 0 01-2.828.775A4.93 4.93 0 0023.337 3a9.864 9.864 0 01-3.127 1.195A4.92 4.92 0 0016.616 3c-2.72 0-4.924 2.21-4.924 4.932 0 .39.042.765.124 1.126C7.728 8.89 4.1 6.91 1.67 3.917a4.936 4.936 0 00-.665 2.48c0 1.71.86 3.213 2.17 4.096A4.9 4.9 0 01.96 9.96v.06c0 2.387 1.68 4.374 3.91 4.828a4.93 4.93 0 01-2.224.086c.626 1.956 2.444 3.384 4.6 3.425A9.874 9.874 0 010 21.54 13.945 13.945 0 007.548 24c9.056 0 14.01-7.512 14.01-14.015 0-.213-.005-.426-.015-.637A9.94 9.94 0 0024 4.557z" />
+                        </svg>
+                    </a>
+
+                    {/* YouTube */}
+                    <a href="#" className="hover:text-red-500 transition">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="fill-current">
+                            <path d="M19.615 3.184C21.403 3.67 22 5.84 22 12s-.597 8.33-2.385 8.816C17.42 21.27 12 21.27 12 21.27s-5.42 0-7.615-.454C2.597 20.33 2 18.16 2 12s.597-8.33 2.385-8.816C6.58 2.73 12 2.73 12 2.73s5.42 0 7.615.454zM10 8.5l6 3.5-6 3.5v-7z" />
+                        </svg>
+                    </a>
+
+                    {/* Facebook */}
+                    <a href="#" className="hover:text-blue-500 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" className="fill-current">
+                            <path d="M9 8H6v4h3v12h5V12h3.642L18 8h-4V6.333C14 5.378 14.2 5 15.112 5H18V0h-3.667C10.55 0 9 1.517 9 4.308V8z" />
+                        </svg>
+                    </a>
                 </div>
             </footer>
         </div>
