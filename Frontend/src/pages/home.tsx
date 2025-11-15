@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Zap, Target, Clock, Award, ChevronRight, Menu, X } from 'lucide-react';
 import AuthModal from '../components/auth/AuthModal';
 import SignIn from '../components/auth/SignIn';
 import SignUp from '../components/auth/SignUp';
 import { SplineScene } from '../components/ui/splite';
 import { Spotlight } from '../components/ui/spotlight';
-import { Card } from '../components/ui/card';
 
 interface Feature {
     icon: React.ReactNode;
@@ -89,6 +88,8 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
         { step: "02", title: "Practice Interview", desc: "Answer AI-generated questions in real-time" },
         { step: "03", title: "Get Feedback", desc: "Receive detailed analysis and improvement tips" }
     ];
+
+    const heroRef = useRef<HTMLDivElement>(null);
 
     return (
         <div className="w-full min-h-screen bg-gradient-to-br from-blue-900 to-gray-400 text-white overflow-x-hidden">
@@ -199,13 +200,10 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </AuthModal>
 
             {/* Hero Section */}
-            <section id="home" className="min-h-[calc(100vh-68px)] flex items-center pt-10 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
+            <section ref={heroRef} id="home" className="min-h-[calc(100vh-68px)] flex items-center pt-10 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
+                {/* Spotlight applied directly to the container as per the demo structure */}
+                <Spotlight parentRef={heroRef} color="#4b9fff" className="mix-blend-screen" />
                 <div className="max-w-7xl mx-auto w-full relative z-10">
-                    {/* Spotlight applied directly to the container as per the demo structure */}
-                    <Spotlight
-                        className="-top-40 left-0 md:left-60 md:-top-20"
-                        fill="white"
-                    />
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         {/* Left side - Text content */}
                         <div>

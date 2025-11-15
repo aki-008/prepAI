@@ -5,7 +5,7 @@ import { User, Mail, Lock, UserPlus, Chrome, X } from 'lucide-react'; // Added '
 interface SignUpProps {
     onClose: () => void;
     onSwitchToSignIn: () => void;
-    // You might want to add onAuthSuccess here later, similar to SignIn
+     onAuthSuccess: () => void;// You might want to add onAuthSuccess here later, similar to SignIn
 }
 
 const SignUp: React.FC<SignUpProps> = ({ onClose, onSwitchToSignIn }) => {

@@ -1,55 +1,64 @@
+import { useEffect, useState } from "react";
+import type { RefObject } from "react";
 import { cn } from "../../lib/utils";
 
 type SpotlightProps = {
+  parentRef: RefObject<HTMLDivElement|null>;
   className?: string;
-  fill?: string;
 };
 
-export const Spotlight = ({ className, fill }: SpotlightProps) => {
+export const Spotlight = ({ parentRef, className }: SpotlightProps) => {
+  const [pos, setPos] = useState({ x: -9999, y: -9999 });
+
+  useEffect(() => {
+    const parent = parentRef.current;
+    if (!parent) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const rect = parent.getBoundingClientRect();
+      setPos({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+      });
+    };
+
+    const handleLeave = () => {
+      setPos({ x: -9999, y: -9999 });
+    };
+
+    parent.addEventListener("mousemove", handleMove);
+    parent.addEventListener("mouseleave", handleLeave);
+
+    return () => {
+      parent.removeEventListener("mousemove", handleMove);
+      parent.removeEventListener("mouseleave", handleLeave);
+    };
+  }, [parentRef]);
+
   return (
-    <svg
+    <div
       className={cn(
-        "animate-spotlight pointer-events-none absolute z-[1] h-[169%] w-[138%] lg:w-[84%] opacity-0",
+        "pointer-events-none absolute inset-0 z-0 transition-transform duration-75 ease-out",
         className
       )}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 3787 2842"
-      fill="none"
+      style={{
+        transform: `translate(${pos.x - 600}px, ${pos.y - 600}px)`,
+      }}
     >
-      <g filter="url(#filter)">
-        <ellipse
-          cx="1924.71"
-          cy="273.501"
-          rx="1924.71"
-          ry="273.501"
-          transform="matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)"
-          fill={fill || "white"}
-          fillOpacity="0.21"
-        ></ellipse>
-      </g>
-      <defs>
-        <filter
-          id="filter"
-          x="0.860352"
-          y="0.838989"
-          width="3785.16"
-          height="2840.26"
-          filterUnits="userSpaceOnUse"
-          colorInterpolationFilters="sRGB"
-        >
-          <feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood>
-          <feBlend
-            mode="normal"
-            in="SourceGraphic"
-            in2="BackgroundImageFix"
-            result="shape"
-          ></feBlend>
-          <feGaussianBlur
-            stdDeviation="151"
-            result="effect1_foregroundBlur_1065_8"
-          ></feGaussianBlur>
-        </filter>
-      </defs>
-    </svg>
+      <svg
+        className="w-[1200px] h-[1200px] opacity-40 blur-3xl"
+        viewBox="0 0 1200 1200"
+        fill="none"
+      >
+        <defs>
+          <radialGradient id="spot" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        <circle cx="600" cy="600" r="600" fill="url(#spot)" />
+      </svg>
+    </div>
   );
 };
