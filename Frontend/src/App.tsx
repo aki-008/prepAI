@@ -6,18 +6,14 @@ import AIInterview from "./pages/AiInterview";
 import Quize from "./pages/quize";
 import Home from "./pages/home";
 import Sidebar from "./components/dashboard/Sidebar";
-import Header from "./components/dashboard/Header";
 
 const App: React.FC = () => {
-  // Track authentication state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Function to handle successful login
   const handleLogin = () => {
     setIsAuthenticated(true);
   };
 
-  // Function to handle logout
   const handleLogout = () => {
     setIsAuthenticated(false);
   };
@@ -25,45 +21,46 @@ const App: React.FC = () => {
   return (
     <Router>
       <Routes>
-        {/* Public Route - Home Page */}
-        <Route 
-          path="/" 
+
+        {/* Public Route */}
+        <Route
+          path="/"
           element={
             isAuthenticated ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <Home onLogin={handleLogin} />
             )
-          } 
+          }
         />
 
-        {/* Protected Routes - Dashboard Layout */}
+        {/* Protected Routes */}
         <Route
           path="/*"
           element={
             isAuthenticated ? (
               <div className="flex h-screen bg-gray-100">
-                {/* Sidebar */}
-                <Sidebar />
+
+                {/* Sidebar (only once) */}
+                <Sidebar onLogout={handleLogout} />
 
                 {/* Main Content */}
-                <div className="flex-1 flex flex-col">
-                  <Header onLogout={handleLogout} />
-                  <main className="flex-1 overflow-y-auto p-6">
-                    <Routes>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/notes" element={<Notes />} />
-                      <Route path="/AIInterview" element={<AIInterview />} />
-                      <Route path="/quize" element={<Quize />} />
-                    </Routes>
-                  </main>
-                </div>
+                <main className="flex-1 overflow-y-auto p-6">
+                  <Routes>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/notes" element={<Notes />} />
+                    <Route path="/AIInterview" element={<AIInterview />} />
+                    <Route path="/quize" element={<Quize />} />
+                  </Routes>
+                </main>
+
               </div>
             ) : (
               <Navigate to="/" replace />
             )
           }
         />
+
       </Routes>
     </Router>
   );
