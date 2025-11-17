@@ -200,7 +200,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
             </AuthModal>
 
             {/* Hero Section */}
-            <section ref={heroRef} id="home" className="min-h-[calc(100vh-68px)] flex items-center pt- pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
+            <section ref={heroRef} id="home" className="min-h-[calc(100vh-68px)] flex items-center pt-20 pb-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-black">
                 {/* Spotlight applied directly to the container as per the demo structure */}
                 <Spotlight parentRef={heroRef} color="#4b9fff" className="mix-blend-screen" />
                 <div className="max-w-7xl mx-auto w-full relative z-10">
