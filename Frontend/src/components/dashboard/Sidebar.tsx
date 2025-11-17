@@ -2,22 +2,23 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, FileText, Brain, BookOpen, 
-  Bell, Settings, User, LogOut 
+  Settings, User, LogOut 
 } from "lucide-react";
 
 interface SidebarProps {
-  onLogout?: () => void;
+  onLogout?: () => void; // Function to handle logging out
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: <Home size={18} /> },
+    { path: "/dashboard", label: "Dashboard", icon: <Home size={18} /> },
     { path: "/notes", label: "Notes", icon: <BookOpen size={18} /> },
     { path: "/AIInterview", label: "AI Interview", icon: <Brain size={18} /> },
     { path: "/quize", label: "Resume Quiz", icon: <FileText size={18} /> },
   ];
+  
   return (
     <aside className="w-64 bg-linear-to-r from-blue-700 to-gray-900/50 text-white flex flex-col justify-between">
       
@@ -43,19 +44,25 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
         </nav>
       </div>
 
-      {/* Bottom Section (From Header) */}
+      {/* Bottom Section (User Actions) */}
       <div className="p-4 border-t border-gray-700 space-y-4">
-        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left">
+        {/* Settings Button */}
+        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left text-gray-300">
           <Settings size={18} />
           <span>Settings</span>
         </button>
 
-        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left">
+        {/* User Profile Placeholder */}
+        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left text-gray-300">
           <User size={18} />
           <span>John Doe</span>
         </button>
 
-        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600 text-black transition w-full text-left">
+        {/* Logout Button (Click handler added here) */}
+        <button 
+          onClick={onLogout}
+          className="flex items-center space-x-3 p-3 rounded-lg bg-red-500 hover:bg-red-600 text-black hover:text-white transition w-full text-left font-medium"
+        >
           <LogOut size={18} />
           <span>Logout</span>
         </button>

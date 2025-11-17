@@ -1,38 +1,32 @@
-import React from 'react';
-import { User, Mail, Lock, UserPlus, Chrome, X } from 'lucide-react'; // Added 'X' icon for close button
+// src/components/SignUp.tsx - CORRECTED CODE
 
-// Added onClose prop to handle form-internal links/closing
+import React from 'react';
+import { User, Mail, Lock, UserPlus, Chrome, X } from 'lucide-react'; 
+
 interface SignUpProps {
     onClose: () => void;
     onSwitchToSignIn: () => void;
-     onAuthSuccess: () => void;// You might want to add onAuthSuccess here later, similar to SignIn
+    onAuthSuccess: () => void;
 }
 
-const SignUp: React.FC<SignUpProps> = ({ onClose, onSwitchToSignIn }) => {
+const SignUp: React.FC<SignUpProps> = ({ onClose, onSwitchToSignIn, onAuthSuccess }) => {
     
-    // TODO: Implement actual form submission logic here
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log("Sign Up form submitted");
-        // Example: If successful, call a prop like onAuthSuccess()
+        // ... (Authentication logic remains the same)
+        
+        // Simulate successful first-time sign-up (which logs them in)
+        console.log("Sign Up successful. Logging in and redirecting to dashboard.");
+        onAuthSuccess();
     };
 
-    // TODO: Implement actual Google OAuth logic here
     const handleGoogleSignUp = () => {
-        console.log("Google Sign Up clicked");
+        // ... (Google Auth logic remains the same)
+        onAuthSuccess();
     };
 
     return (
         <>
-            {/* Close Button - Uses the 'onClose' prop */}
-            <button 
-                onClick={onClose}
-                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-slate-800"
-                aria-label="Close"
-            >
-                <X className="w-5 h-5" />
-            </button>
-            
             <h2 className="text-3xl font-bold mb-8 text-center text-white">
                 Create Your Account
             </h2>

@@ -25,15 +25,6 @@ const SignIn: React.FC<SignInProps> = ({ onClose, onSwitchToSignUp, onAuthSucces
 
   return (
     <> 
-      {/* Close Button - Uses the 'onClose' prop */}
-      <button 
-        onClick={onClose}
-        className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-slate-800"
-        aria-label="Close"
-      >
-        <X className="w-5 h-5" />
-      </button>
-
       <h2 className="text-3xl font-bold mb-8 text-center text-white">
         Welcome Back
       </h2>
