@@ -45,7 +45,7 @@ const App: React.FC = () => {
                 <Sidebar onLogout={handleLogout} />
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto">
                   <Routes>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/notes" element={<Notes />} />

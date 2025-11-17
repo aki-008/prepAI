@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
     { path: "/quize", label: "Resume Quiz", icon: <FileText size={18} /> },
   ];
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col justify-between">
+    <aside className="w-64 bg-linear-to-r from-blue-700 to-gray-900/50 text-white flex flex-col justify-between">
       
       {/* Top Section */}
       <div>
@@ -46,11 +46,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
       {/* Bottom Section (From Header) */}
       <div className="p-4 border-t border-gray-700 space-y-4">
         <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left">
-          <Bell size={18} />
-          <span>Notifications</span>
-        </button>
-
-        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left">
           <Settings size={18} />
           <span>Settings</span>
         </button>
@@ -60,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout }) => {
           <span>John Doe</span>
         </button>
 
-        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600/20 text-red-400 transition w-full text-left">
+        <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-600 text-black transition w-full text-left">
           <LogOut size={18} />
           <span>Logout</span>
         </button>

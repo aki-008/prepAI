@@ -92,7 +92,7 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
     const heroRef = useRef<HTMLDivElement>(null);
 
     return (
-        <div className="w-full min-h-screen bg-linear-to-br from-blue-900 to-gray-400 text-white overflow-x-hidden">
+        <div className="w-full min-h-screen bg-linear-to-br from-blue-900 to-gray-400 text-white overflow-x-hidden font-opensans">
             {/* Navigation Bar */}
             <nav className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-slate-900/95 backdrop-blur-md shadow-xl' : 'bg-slate-900/80 backdrop-blur-sm'}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

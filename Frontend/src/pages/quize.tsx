@@ -5,7 +5,7 @@ import { FileText, FileSpreadsheet, Code2, ListChecks, UploadCloud, Type } from 
 const ResumeGeneratedQuize: React.FC = () => {
 
     // Consistent purple button style
-    const buttonClass = "w-full py-3 rounded-lg bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 font-medium transition shadow-lg shadow-purple-500/30 text-white mt-4";
+    const buttonClass = "w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 font-medium transition shadow-lg shadow-blue-500/30 text-white mt-4";
 
     const OutputTypeOption = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
         // These cards inherently take full width of their parent container (which is now the right column)
@@ -47,7 +47,7 @@ const ResumeGeneratedQuize: React.FC = () => {
 
                 {/* --- LEFT SIDE: INPUT SOURCE SELECTION --- */}
                 <div>
-                    <h3 className="text-3xl font-bold mb-6 text-gray-100 border-b border-purple-700 pb-2">
+                    <h3 className="text-3xl font-bold mb-6 text-gray-100 border-b border-blue-700 pb-2">
                         1. Select Quiz Source
                     </h3>
                     <div className="space-y-8">
@@ -64,7 +64,7 @@ const ResumeGeneratedQuize: React.FC = () => {
 
                 {/* --- RIGHT SIDE: PROMPT & OUTPUT CONFIGURATION (The full width section) --- */}
                 <div className="lg:sticky lg:top-8 self-start">
-                    <h3 className="text-3xl font-bold mb-6 text-gray-100 border-b border-purple-700 pb-2">
+                    <h3 className="text-3xl font-bold mb-6 text-gray-100 border-b border-blue-700 pb-2">
                         2. Configure & Generate
                     </h3>
 
@@ -99,14 +99,14 @@ const ResumeGeneratedQuize: React.FC = () => {
 
                     {/* MCQ Quiz Option - takes full width of its column */}
                     <OutputTypeOption
-                        icon={<ListChecks className="w-6 h-6 text-purple-400" />}
+                        icon={<ListChecks className="w-6 h-6 text-blue-400" />}
                         title="Multiple Choice Quiz (MCQ)"
                         desc="Ideal for quick assessment of knowledge and comprehension."
                     />
 
                     {/* Coding Quiz Option - takes full width of its column */}
                     <OutputTypeOption
-                        icon={<Code2 className="w-6 h-6 text-green-400" />}
+                        icon={<Code2 className="w-6 h-6 text-blue-400" />}
                         title="Coding Challenge Quiz"
                         desc="Generates problems requiring code snippets or full functions for evaluation."
                     />

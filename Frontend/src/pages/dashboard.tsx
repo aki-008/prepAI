@@ -23,7 +23,7 @@ const Dashboard = () => {
     // PRIMARY CHANGE: Background Gradient inspired by landing page
     // Using a custom CSS class for a more complex gradient if needed, or approximating with Tailwind.
     // For now, let's use a subtle linear gradient that implies the dark blue-black.
-    <div className="px-6 py-8 space-y-10 min-h-screen text-gray-100 bg-linear-to-br from-[#0a0e1b] via-[#100d27] to-[#0a0e1b] font-sans">
+    <div className="px-6 py-8 space-y-10 min-h-screen text-gray-100 bg-black font-OpenSans">
       {/* Font sans is a good default for modern look */}
 
       {/* ----------- HEADER SECTION (Updated for new theme) ----------- */}
