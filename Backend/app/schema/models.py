@@ -1,0 +1,43 @@
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
+from typing import  Optional
+from datetime import datetime
+
+class StudentBase(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr = Field(...)
+
+    @field_validator("name")
+    def validate_name(cls, v):
+        if not v.strip():
+            raise ValueError('Name cannot be empty or just whitespace')
+        return v.strip()
+
+class StudentCreate(StudentBase):
+    pass
+
+class StudentUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    email: Optional[EmailStr] = None
+
+class StudentResponse(StudentBase):
+    id: int
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserCreate(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=6, max_length=72)
+
+    @field_validator('password')
+    def validate_password(cls, v):
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError('Password cannot exceed 72 bytes')
+        return v
+    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
