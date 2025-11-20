@@ -28,6 +28,7 @@ class StudentResponse(StudentBase):
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
+    email: EmailStr = Field(...)
     password: str = Field(..., min_length=6, max_length=72)
 
     @field_validator('password')
@@ -35,7 +36,10 @@ class UserCreate(BaseModel):
         if len(v.encode("utf-8")) > 72:
             raise ValueError('Password cannot exceed 72 bytes')
         return v
-    
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
 
 class Token(BaseModel):
     access_token: str
