@@ -7,9 +7,16 @@ from app.models import User
 from app.core import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_db
 from app.config import settings
-
+from pydantic import BaseModel
 
 router = APIRouter()
+
+
+
+class LoginRequest(BaseModel):
+    # This tells FastAPI to expect a JSON body with these keys
+    username: str
+    password: str
 
 @router.post("/register", response_model=dict)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
@@ -39,7 +46,12 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
         )
     
 @router.post("/login", response_model=Token)
-async def login(username: str, password: str, db: AsyncSession = Depends(get_db)):
+async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
+    # Access the data via the request object
+    username = request.username
+    password = request.password
+    
+    # The rest of your logic remains the same
     try:
         result = await db.execute(select(User).filter(User.username == username))
         user = result.scalar_one_or_none()
