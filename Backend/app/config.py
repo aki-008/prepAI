@@ -14,6 +14,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
-        extra = "ignore"  # optional
+        extra = "ignore"  # quiz
 
 settings = Settings()
