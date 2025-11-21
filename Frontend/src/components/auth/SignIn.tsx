@@ -8,9 +8,13 @@ interface SignInProps {
   onAuthSuccess: () => void;
 }
 
-const SignIn: React.FC<SignInProps> = ({ onClose, onSwitchToSignUp, onAuthSuccess }) => {
-  // const [email, setEmail] = useState("");
-  const [username, setUserName] = useState("");
+const SignIn: React.FC<SignInProps> = ({
+  onClose,
+  onSwitchToSignUp,
+  onAuthSuccess,
+}) => {
+  const [email, setEmail] = useState("");
+  // const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -20,7 +24,7 @@ const SignIn: React.FC<SignInProps> = ({ onClose, onSwitchToSignUp, onAuthSucces
 
     try {
       const res = await API.post("/auth/login", {
-        username: username,   // 🔥 FastAPI expects `username` (OAuth2PasswordRequestForm)
+        email: email, // 🔥 FastAPI expects `username` (OAuth2PasswordRequestForm)
         password,
       });
 
@@ -47,8 +51,8 @@ const SignIn: React.FC<SignInProps> = ({ onClose, onSwitchToSignUp, onAuthSucces
             <input
               type="string"
               placeholder="username or email"
-              value={username}
-              onChange={(e) => setUserName(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full pl-10 py-3 bg-slate-800 border border-slate-700 text-white rounded-lg"
               required
             />
@@ -78,7 +82,9 @@ const SignIn: React.FC<SignInProps> = ({ onClose, onSwitchToSignUp, onAuthSucces
 
       <p className="mt-8 text-center text-sm text-gray-400">
         Don’t have an account?
-        <button onClick={onSwitchToSignUp} className="ml-2 text-blue-400">Sign Up</button>
+        <button onClick={onSwitchToSignUp} className="ml-2 text-blue-400">
+          Sign Up
+        </button>
       </p>
     </>
   );
