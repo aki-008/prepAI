@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://postgres:690869@172.26.157.164:5432/studentdb"
+        "postgresql+asyncpg://postgres:mysecretpassword@localhost:5432/studentdb"
     )
     
     # Security
