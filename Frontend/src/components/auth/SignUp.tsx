@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import { User, Mail, Lock, UserPlus, Chrome } from "lucide-react";
-import API from "../../api/api";
+import { User, Mail, Lock, UserPlus } from "lucide-react";
+import API from "../../api/api"; // Assuming the API file is one directory up
 
 interface SignUpProps {
   onClose: () => void;
   onSwitchToSignIn: () => void;
-  onAuthSuccess: () => void;
+  onAuthSuccess: (username: string) => void;
 }
 
 const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
-  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -24,21 +24,38 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
     }
 
     try {
+      // 1. Registration via API (uses axios and the correct base URL)
       await API.post("/auth/register", {
-        full_name: fullName,
+        username,
         email,
         password,
       });
 
-      const loginRes = await API.post("/auth/login", {
-        username: email,
+      // 2. Login immediately after successful registration
+      const loginResponse = await API.post("/auth/login", {
+        email,
         password,
       });
 
-      localStorage.setItem("token", loginRes.data.access_token);
-      onAuthSuccess();
+      // The response data is directly on response.data when using axios
+      const loginData = loginResponse.data;
+      localStorage.setItem("token", loginData.access_token);
+      const loggedInUsername = loginData.username;
+      onAuthSuccess(loggedInUsername);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Registration failed");
+      console.error("Registration/Login error:", err);
+
+      // Axios error handling: Check for response data and detail for custom error message
+      let errorMessage = "Registration failed";
+      if (err.response && err.response.data && err.response.data.detail) {
+        // Extracts the specific error detail from FastAPI (e.g., 'Username already registered')
+        errorMessage = err.response.data.detail;
+      } else if (err.message) {
+        // Use generic network or request error message
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     }
   };
 
@@ -50,14 +67,14 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
 
       {error && <p className="text-red-400 text-center mb-3">{error}</p>}
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      <div className="space-y-5">
         <div>
-          <label className="text-gray-300">Full Name</label>
+          <label className="text-gray-300">Username</label>
           <div className="relative">
             <User className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
             <input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               type="text"
               className="w-full pl-10 py-3 bg-slate-800 border border-slate-700 text-white rounded-lg"
               required
@@ -107,15 +124,18 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
           </div>
         </div>
 
-        <button className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-gray-500 text-white flex items-center justify-center gap-2">
+        <button
+          onClick={handleSubmit}
+          className="w-full px-5 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition"
+        >
           <UserPlus className="w-5 h-5" />
           Sign Up
         </button>
-      </form>
+      </div>
 
       <p className="mt-8 text-center text-sm text-gray-400">
         Already have an account?
-        <button onClick={onSwitchToSignIn} className="text-blue-400 ml-2">
+        <button onClick={onSwitchToSignIn} className="text-blue-400 ml-2 hover:underline">
           Sign In
         </button>
       </p>

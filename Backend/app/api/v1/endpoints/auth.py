@@ -64,7 +64,7 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
             expires_deltas=access_token_expires
         )
 
-        return {"access_token":access_token, "token_type":"bearer"}
+        return {"access_token":access_token, "token_type":"bearer","username":user.username}
     except HTTPException:
         raise 
     except Exception as e:

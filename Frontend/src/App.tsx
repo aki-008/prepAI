@@ -12,11 +12,13 @@ import { AuthProvider, useAuth } from "./components/context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
 
 const DashboardLayout = () => {
-  const { logout } = useAuth();
+  // 1. Retrieve both logout and username from the AuthContext
+  const { logout, username } = useAuth();
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar onLogout={logout} />
+      {/* 2. Pass the retrieved username prop to the Sidebar */}
+      <Sidebar onLogout={logout} username={username} />
 
       <main className="flex-1 overflow-y-auto">
         <Routes>
@@ -36,7 +38,6 @@ const App: React.FC = () => {
     <AuthProvider>
       <Router>
         <Routes>
-          
           {/* Public Home */}
           <Route path="/" element={<HomeWrapper />} />
 

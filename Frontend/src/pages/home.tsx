@@ -20,7 +20,7 @@ interface Step {
 
 // Add onLogin prop
 interface AIInterviewPlatformProps {
-    onLogin: () => void;
+    onLogin: (username:string) => void;
 }
 
 const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) => {
@@ -42,9 +42,9 @@ const AIInterviewPlatform: React.FC<AIInterviewPlatformProps> = ({ onLogin }) =>
     const closeModal = () => setModalType('none');
 
     // Handle successful authentication
-    const handleAuthSuccess = () => {
+    const handleAuthSuccess = (username:string) => {
         closeModal();
-        onLogin(); // Call the parent function to update auth state
+        onLogin(username); // Call the parent function to update auth state
     };
 
     useEffect(() => {
