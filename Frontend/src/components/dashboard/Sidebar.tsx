@@ -4,14 +4,12 @@ import {
   Home, FileText, Brain, BookOpen,
   Settings, User, LogOut
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-interface SidebarProps {
-  onLogout?: () => void; // Function to handle logging out 
-  username: string;
-}
 
-const Sidebar: React.FC<SidebarProps> = ({ onLogout, username }) => {
+const Sidebar: React.FC = () => {
   const location = useLocation();
+  const { username, logout } = useAuth();
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: <Home size={18} /> },
@@ -55,12 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, username }) => {
         {/* User Profile Button - Now displays the actual username */}
         <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left text-gray-300">
           <User size={18} />
-          <span>{username || "Guest User"}</span>
+          <span>{username}</span>
         </button>
 
         {/* Logout Button (Click handler added here) */}
         <button
-          onClick={onLogout}
+          onClick={logout}
           className="flex items-center space-x-3 p-3 rounded-lg bg-red-500 hover:bg-red-600 text-black hover:text-white transition w-full text-left font-medium"
         >
           <LogOut size={18} />

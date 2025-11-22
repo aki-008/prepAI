@@ -126,7 +126,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
 
         <button
           onClick={handleSubmit}
-          className="w-full px-5 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition"
+          className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition"
         >
           <UserPlus className="w-5 h-5" />
           Sign Up

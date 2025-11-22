@@ -13,12 +13,11 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 const DashboardLayout = () => {
   // 1. Retrieve both logout and username from the AuthContext
-  const { logout, username } = useAuth();
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* 2. Pass the retrieved username prop to the Sidebar */}
-      <Sidebar onLogout={logout} username={username} />
+      <Sidebar/>
 
       <main className="flex-1 overflow-y-auto">
         <Routes>
