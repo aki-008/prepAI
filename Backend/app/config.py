@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: list = ["*"]
 
+    chroma_host: str
+    chroma_port: int
+    chroma_collection: str
+
     class Config:
         env_file = ".env"
         extra = "ignore"  # quiz
