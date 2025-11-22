@@ -1,17 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Home, FileText, Brain, BookOpen,
-  Settings, User, LogOut
-} from "lucide-react";
+import { Home, FileText, Brain, BookOpen, Settings, User, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
-interface SidebarProps {
-  onLogout?: () => void; // Function to handle logging out 
-  username: string;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ onLogout, username }) => {
+const Sidebar: React.FC = () => {
   const location = useLocation();
+  const { username, logout } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
 
   const navItems = [
     { path: "/dashboard", label: "Dashboard", icon: <Home size={18} /> },
@@ -21,12 +16,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, username }) => {
   ];
 
   return (
-    <aside className="w-64 bg-linear-to-r from-blue-700 to-gray-900/50 text-white flex flex-col justify-between">
-
+    <aside
+      className={`flex flex-col justify-between h-screen bg-linear-to-r from-blue-700 to-gray-900/50 text-white transition-all duration-300 ${collapsed ? "w-20" : "w-64"}`}
+    >
       {/* Top Section */}
       <div>
-        <div className="text-2xl font-bold text-center py-6 border-b border-gray-700">
-          InterviewAI
+        <div className="flex items-center justify-between text-2xl font-bold py-6 px-4 border-b border-gray-700">
+          {!collapsed && <span>InterviewAI</span>}
+          <button onClick={() => setCollapsed(!collapsed)} className="p-1">
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
         </div>
 
         <nav className="p-4 space-y-3">
@@ -34,40 +33,35 @@ const Sidebar: React.FC<SidebarProps> = ({ onLogout, username }) => {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition ${location.pathname === item.path ? "bg-gray-800" : ""
-                }`}
+              className={`flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition ${location.pathname === item.path ? "bg-gray-800" : ""}`}
             >
               {item.icon}
-              <span>{item.label}</span>
+              {!collapsed && <span>{item.label}</span>}
             </Link>
           ))}
         </nav>
       </div>
 
-      {/* Bottom Section (User Actions) */}
+      {/* Bottom Section */}
       <div className="p-4 border-t border-gray-700 space-y-4">
-        {/* Settings Button */}
         <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left text-gray-300">
           <Settings size={18} />
-          <span>Settings</span>
+          {!collapsed && <span>Settings</span>}
         </button>
 
-        {/* User Profile Button - Now displays the actual username */}
         <button className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-800 transition w-full text-left text-gray-300">
           <User size={18} />
-          <span>{username || "Guest User"}</span>
+          {!collapsed && <span>{username}</span>}
         </button>
 
-        {/* Logout Button (Click handler added here) */}
         <button
-          onClick={onLogout}
+          onClick={logout}
           className="flex items-center space-x-3 p-3 rounded-lg bg-red-500 hover:bg-red-600 text-black hover:text-white transition w-full text-left font-medium"
         >
           <LogOut size={18} />
-          <span>Logout</span>
+          {!collapsed && <span>Logout</span>}
         </button>
       </div>
-
     </aside>
   );
 };
