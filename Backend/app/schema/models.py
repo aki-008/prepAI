@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
-from typing import  Optional
+from typing import  Optional, Literal
 from datetime import datetime
 
 class StudentBase(BaseModel):
@@ -47,3 +47,8 @@ class Token(BaseModel):
 
 class LoginResponse(Token):
     username: str
+
+class Quiz_input(BaseModel):
+    parsed_doc: str
+    user_prompt: str
+    choice: Literal["mcq", "code"]
