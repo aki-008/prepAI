@@ -5,6 +5,8 @@ from datetime import datetime
 from app.config import settings
 from app.database import engine, Base
 from app.api.v1.api import api_router
+import chromadb
+
 
 
 @asynccontextmanager
@@ -16,6 +18,11 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
+    app.state.chroma_client = await chromadb.AsyncHttpClient(
+        host=settings.chroma_host,
+        port=settings.chroma_port
+    )
+
     print("✅ Tables ready!")
     yield
     print("🧹 Server shutting down:", datetime.now())
