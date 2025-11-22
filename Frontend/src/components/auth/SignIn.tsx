@@ -14,7 +14,6 @@ const SignIn: React.FC<SignInProps> = ({
   onAuthSuccess,
 }) => {
   const [email, setEmail] = useState("");
-  // const [username, setUserName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
@@ -23,15 +22,37 @@ const SignIn: React.FC<SignInProps> = ({
     setError("");
 
     try {
+      // 1. Send JSON body with keys matching the backend's LoginRequest schema
       const res = await API.post("/auth/login", {
-        email: email, // 🔥 FastAPI expects `username` (OAuth2PasswordRequestForm)
+        email: email, // Backend expects 'email' key in the JSON body
         password,
       });
 
       localStorage.setItem("token", res.data.access_token);
       onAuthSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Login failed");
+      console.error("Login error:", err);
+      let errorMessage = "Login failed due to an unknown error.";
+
+      // --- Robust Error Handling for 422 (Pydantic validation) ---
+      if (err.response && err.response.data && err.response.data.detail) {
+        const detail = err.response.data.detail;
+
+        if (typeof detail === 'string') {
+          // Handle simple error messages like "Incorrect username or password" (from 401)
+          errorMessage = detail;
+        } else if (Array.isArray(detail) && detail.length > 0) {
+          // Handle 422 Pydantic validation error (list of error objects)
+          // We extract the human-readable message from the first object
+          const firstError = detail[0];
+          errorMessage = `Validation Error on '${firstError.loc.join(' -> ')}': ${firstError.msg}`;
+        }
+      } else if (err.message) {
+        // Fallback for network errors (e.g., server offline)
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     }
   };
 
@@ -41,6 +62,7 @@ const SignIn: React.FC<SignInProps> = ({
         Welcome Back
       </h2>
 
+      {/* 2. This ensures only a string is rendered, fixing the React error */}
       {error && <p className="text-red-400 text-center mb-3">{error}</p>}
 
       <form className="space-y-5" onSubmit={handleSubmit}>
@@ -64,7 +86,7 @@ const SignIn: React.FC<SignInProps> = ({
           <div className="relative">
             <Lock className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-blue-400" />
             <input
-              type="string"
+              type="password" // Changed type to 'password' for browser security
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -74,7 +96,9 @@ const SignIn: React.FC<SignInProps> = ({
           </div>
         </div>
 
-        <button className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-gray-500 text-white flex items-center justify-center gap-2">
+        <button
+          type="submit" // Added type="submit" for proper form submission
+          className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-gray-500 text-white flex items-center justify-center gap-2">
           <LogIn className="w-5 h-5" />
           Sign In
         </button>
