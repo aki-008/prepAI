@@ -23,7 +23,7 @@ GENERATION RULES
 REQUIRED JSON FORMAT FOR EACH QUESTION
 -----------------------
 {{
-    "questions": "Which of the following CLI command can also be used to rename files?",
+    "question": "Which of the following CLI command can also be used to rename files?",
     "options": [
         "rm",
         "mv",
