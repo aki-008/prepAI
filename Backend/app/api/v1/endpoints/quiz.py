@@ -3,11 +3,30 @@ from chromadb import AsyncHttpClient
 from app.models import User
 from app.api.deps import get_db, get_current_user, get_chroma_client
 from app.schema import Quiz_input
-from prompts import SYSTEM_PROMPT
+from .prompts import SYSTEM_PROMPT
 
-router = APIRouter()
+from fastapi import APIRouter, Depends, HTTPException
+from chromadb.api.models.Collection import Collection # Import Collection type
+from app.api.deps import get_chroma_collection
+
+router = APIRouter(prefix="/search")
 
 
+@router.get("/")
+async def search_documents(
+    query: str, 
+    # Inject the pre-loaded Collection object directly
+    collection: Collection = Depends(get_chroma_collection) 
+):
+    try:
+        # The Collection object is ready to use immediately.
+        results = await collection.query(
+            query_texts=[query],
+            n_results=5
+        )
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ChromaDB Query Error: {e}")
 
 
 
