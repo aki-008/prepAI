@@ -6,15 +6,15 @@ from app.schema.models import QuizOutput, QuizQuestion
 from app.config import settings
 
 client = OpenAI(
-    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-    api_key="AIzaSyAIZJOjjq87FDmW9sVoTuvPkwnmfFWtfNE",
+    base_url="https://api.groq.com/openai/v1",
+    api_key=settings.GROQ_API_KEY
 )
 
 async def call_llm(prompt:str):
     try:
         response = client.chat.completions.create(
             # CRUCIAL: Use the LiteLLM format: 'gemini/gemini-2.5-pro'
-            model="models/gemini-2.0-flash", 
+            model="openai/gpt-oss-20b", 
             messages=[
                 {"role": "user", "content": prompt}
             ],

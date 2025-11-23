@@ -54,11 +54,11 @@ class Quiz_input(BaseModel):
     # choice: Literal["mcq", "code"]
 
 class QuizQuestion(BaseModel):
-    questions: str
-    options: List[str] = Field(..., min_items=4, max_items=4)
-    answer: str  = Field(..., description="The correct answer key (e.g., 'a', 'b', 'c', or 'd')")
-    explanation: str 
-    user_response: str = Field("", alias="User_response")
+    question: str 
+    options: List[str] = Field(..., min_items=2)
+    answer: str = Field(..., description="Correct answer key")
+    explanation: str
+    User_response: str = Field("", alias="User_response")
 
 class QuizOutput(BaseModel):
     quiz: List[QuizQuestion] = Field(..., description="A list of 10 generated MCQ questions.")
