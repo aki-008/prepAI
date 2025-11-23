@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
-from typing import  Optional, Literal
+from typing import  Optional, Literal, List
 from datetime import datetime
 
 class StudentBase(BaseModel):
@@ -51,4 +51,14 @@ class LoginResponse(Token):
 class Quiz_input(BaseModel):
     parsed_doc: str
     user_prompt: str
-    choice: Literal["mcq", "code"]
+    # choice: Literal["mcq", "code"]
+
+class QuizQuestion(BaseModel):
+    questions: str
+    options: List[str] = Field(..., min_items=4, max_items=4)
+    answer: str  = Field(..., description="The correct answer key (e.g., 'a', 'b', 'c', or 'd')")
+    explanation: str 
+    user_response: str = Field("", alias="User_response")
+
+class QuizOutput(BaseModel):
+    quiz: List[QuizQuestion] = Field(..., description="A list of 10 generated MCQ questions.")

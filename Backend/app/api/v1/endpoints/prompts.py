@@ -1,12 +1,9 @@
-
-
 SYSTEM_PROMPT = """
 You are an AI question-generation agent.
 Your task is to generate a batch of 10 high-quality MCQ questions strictly based on the following inputs:
 
 - {parsed_info}
 - {user_prompt}
-- {mcq_style}
 - {retrieved_docs}
 
 -----------------------
@@ -25,8 +22,8 @@ GENERATION RULES
 -----------------------
 REQUIRED JSON FORMAT FOR EACH QUESTION
 -----------------------
-{
-    "question": "Which of the following CLI command can also be used to rename files?",
+{{
+    "questions": "Which of the following CLI command can also be used to rename files?",
     "options": [
         "rm",
         "mv",
@@ -34,9 +31,9 @@ REQUIRED JSON FORMAT FOR EACH QUESTION
         "none of the mentioned"
     ],
     "answer": "b",
-    "explanation": "Explanation: mv stands for move.",
+    "explanation": "mv stands for move.",
     "User_response": ""
-}
+}}
 
 -----------------------
 ANSWER KEY RULES

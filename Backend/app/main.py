@@ -7,7 +7,9 @@ from app.database import engine, Base
 from app.api.v1.api import api_router
 import chromadb
 from chromadb.api.models.Collection import Collection
+from dotenv import load_dotenv
 
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
