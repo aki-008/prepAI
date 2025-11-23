@@ -220,3 +220,5 @@ Backend/Time complexity cheatsheet.pdf
 test/1000-data-science-questions-answers.json
 
 test/test.ipynb
+vector_db
+.gitignore
