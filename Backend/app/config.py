@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     chroma_port: int
     chroma_collection: str
 
+    GEMINI_API_KEY:str
+
     class Config:
         env_file = ".env"
         extra = "ignore"  # quiz
