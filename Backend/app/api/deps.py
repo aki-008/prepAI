@@ -6,6 +6,9 @@ from jose import JWTError, jwt
 from app.database import async_session_maker
 from app.models import User
 from app.config import settings
+from fastapi import Request
+from chromadb import AsyncHttpClient
+from chromadb.api.models.Collection import Collection
 
 security  = HTTPBearer()
 
@@ -48,3 +51,16 @@ async def get_current_user(
     
     return user
 
+
+
+async def get_chroma_client(request: Request) -> AsyncHttpClient:
+    client = getattr(request.app.state, "chroma_client", None)
+    if client is None:
+        raise RuntimeError("ChromaDB client is not initialized in App State.")
+    return client
+
+def get_chroma_collection(request: Request) -> Collection:
+    collection = getattr(request.app.state, "chroma_collection", None)
+    if collection is None:
+        raise RuntimeError("ChromaDB Collection not loaded during application startup.")
+    return collection

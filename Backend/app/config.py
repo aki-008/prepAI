@@ -12,8 +12,14 @@ class Settings(BaseSettings):
 
     CORS_ORIGINS: list = ["*"]
 
+    chroma_host: str
+    chroma_port: int
+    chroma_collection: str
+
+    GROQ_API_KEY:str
+
     class Config:
         env_file = ".env"
-        extra = "ignore"  # optional
+        extra = "ignore"  # quiz
 
 settings = Settings()
