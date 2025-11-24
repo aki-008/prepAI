@@ -5,7 +5,11 @@ from datetime import datetime
 from app.config import settings
 from app.database import engine, Base
 from app.api.v1.api import api_router
+import chromadb
+from chromadb.api.models.Collection import Collection
+from dotenv import load_dotenv
 
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -16,6 +20,21 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
+    client = await chromadb.AsyncHttpClient(
+        host=settings.chroma_host,
+        port=settings.chroma_port
+    )
+    app.state.chroma_client = client
+
+    try:
+        collection: Collection = await client.get_or_create_collection(settings.chroma_collection)
+        app.state.chroma_collection = collection
+
+        count = await collection.count()
+        print(f"Successfully loaded collection '{settings.chroma_collection}' with {count} documents.")
+    except Exception as e:
+        print(f"Failed to load ChromaDB collection: {e}")
+
     print("✅ Tables ready!")
     yield
     print("🧹 Server shutting down:", datetime.now())
