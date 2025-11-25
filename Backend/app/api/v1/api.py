@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, students, quiz
+from app.api.v1.endpoints import auth, quiz
 
 api_router = APIRouter()
 
@@ -10,14 +10,8 @@ api_router.include_router(
     tags=["Authentication"]
 )
 
-# Include student routes
-api_router.include_router(
-    students.router,
-    prefix="/students",
-    tags=["Students"]
-)
 
-# Include student routes
+# Include quiz routes
 api_router.include_router(
     quiz.router,
     prefix="/quiz",

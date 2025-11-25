@@ -2,30 +2,6 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import  Optional, Literal, List
 from datetime import datetime
 
-class StudentBase(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-    email: EmailStr = Field(...)
-
-    @field_validator("name")
-    def validate_name(cls, v):
-        if not v.strip():
-            raise ValueError('Name cannot be empty or just whitespace')
-        return v.strip()
-
-class StudentCreate(StudentBase):
-    pass
-
-class StudentUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    email: Optional[EmailStr] = None
-
-class StudentResponse(StudentBase):
-    id: int
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr = Field(...)

@@ -1,4 +1,4 @@
-from app.models.tables import Student, User
+from app.models.tables import User
 
 
-__all__ = ["Student", "User"]
+__all__ = [ "User"]
