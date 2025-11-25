@@ -62,3 +62,8 @@ class QuizQuestion(BaseModel):
 
 class QuizOutput(BaseModel):
     quiz: List[QuizQuestion] = Field(..., description="A list of 10 generated MCQ questions.")
+
+class IngestRequest(BaseModel):
+    parsed_doc: str = Field(..., description="The main document content to embed")
+    user_prompt: str = Field(..., description="The user prompt associated with this document")
+    id: Optional[str] = None
