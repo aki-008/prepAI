@@ -226,3 +226,7 @@ vector_db
 test.ipynb
 .gitignore
 test.json
+
+#db files
+.sqlite3
+.bin

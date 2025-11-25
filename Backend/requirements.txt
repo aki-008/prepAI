@@ -8,5 +8,6 @@ passlib[argon2]
 python-jose[cryptography]
 email-validator
 chromadb
-'pydantic[email]'
+pydantic[email]
 sentence-transformers
+openai
