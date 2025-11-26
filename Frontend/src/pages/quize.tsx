@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { FileSpreadsheet, Code2, ListChecks } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { FileSpreadsheet, Code2, ListChecks, FileText, Upload, X } from "lucide-react";
 import MCQQuizPage from "../components/quize/mcq"; 
 
 const CodingQuizPage = ({ onBack }: any) => (
@@ -17,18 +17,81 @@ const CodingQuizPage = ({ onBack }: any) => (
 const ResumeGeneratedQuize: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizType, setQuizType] = useState<"mcq" | "coding" | null>(null);
+  const [uploadType, setUploadType] = useState<"resume" | "notes" | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [fileObject, setFileObject] = useState<File | null>(null);
 
-  const buttonClass =
-    "w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 font-medium transition shadow-lg shadow-blue-500/30 text-white mt-4";
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [quizData, setQuizData] = useState(null);
 
-  // Load Quiz Page
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const notesInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: "resume" | "notes") => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      setFileError("Please upload a PDF file");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setFileError(`File size exceeds 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      return;
+    }
+
+    setFileError(null);
+    setUploadType(type);
+    setUploadedFile(file.name);
+    setFileObject(file);       // <-- Store actual file object
+  };
+
+  const handleResumeClick = () => resumeInputRef.current?.click();
+  const handleNotesClick = () => notesInputRef.current?.click();
+
+  const clearUpload = () => {
+    setUploadedFile(null);
+    setUploadType(null);
+    setFileError(null);
+    setFileObject(null);
+  };
+
+  // ---------- SEND PDF TO BACKEND ----------
+  const generateQuiz = async () => {
+    if (!fileObject || !quizType) return;
+
+    const formData = new FormData();
+    formData.append("file", fileObject);
+    formData.append("quiz_type", quizType);
+    formData.append("instructions", customPrompt);
+
+    const response = await fetch("http://localhost:8000/generate-quiz", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    setQuizData(data);   // store quiz data
+    setShowQuiz(true);   // navigate to quiz page
+  };
+
+  // Load quiz UI
   if (showQuiz) {
     if (quizType === "mcq")
-      return <MCQQuizPage onBack={() => setShowQuiz(false)} />;
+      return <MCQQuizPage data={quizData} onBack={() => setShowQuiz(false)} />;
 
     if (quizType === "coding")
-      return <CodingQuizPage onBack={() => setShowQuiz(false)} />;
+      return <CodingQuizPage data={quizData} onBack={() => setShowQuiz(false)} />;
   }
+
+  // ---- UI COMPONENTS (same as your original) ----
+  const buttonClass =
+    "w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 font-medium transition shadow-lg shadow-blue-500/30 text-white mt-4";
 
   const OutputTypeOption = ({ icon, title, desc, value }: any) => (
     <div
@@ -49,18 +112,69 @@ const ResumeGeneratedQuize: React.FC = () => {
     </div>
   );
 
-  const SourceCard = ({ icon, title, desc, actionText }: any) => (
+  const SourceCard = () => (
     <div className="p-6 bg-slate-900/60 rounded-2xl shadow-xl border border-slate-700 hover:bg-slate-800/70 transition flex flex-col h-full">
       <div className="flex items-start gap-4 mb-4">
-        {icon}
+        <FileSpreadsheet className="w-8 h-8 text-cyan-400" />
         <div>
-          <h2 className="text-2xl font-bold">{title}</h2>
-          <p className="text-gray-400 mt-1 text-sm">{desc}</p>
+          <h2 className="text-2xl font-bold">Upload Materials</h2>
+          <p className="text-gray-400 mt-1 text-sm">Upload your resume or notes (Max 10MB)</p>
         </div>
       </div>
-      <button className={buttonClass.replace("w-full", "w-fit px-6")}>
-        {actionText}
-      </button>
+      
+      <input
+        ref={resumeInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={(e) => handleFileUpload(e, "resume")}
+        className="hidden"
+      />
+      <input
+        ref={notesInputRef}
+        type="file"
+        accept=".pdf"
+        onChange={(e) => handleFileUpload(e, "notes")}
+        className="hidden"
+      />
+
+      <div className="flex gap-3 mt-4">
+        <button
+          onClick={handleResumeClick}
+          className="flex-1 py-2 px-4 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white font-medium transition flex items-center justify-center gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          Resume
+        </button>
+        <button
+          onClick={handleNotesClick}
+          className="flex-1 py-2 px-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium transition flex items-center justify-center gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          Notes
+        </button>
+      </div>
+
+      {fileError && (
+        <div className="mt-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+          <p className="text-sm text-red-300">{fileError}</p>
+        </div>
+      )}
+
+      {uploadedFile && (
+        <div className="mt-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg flex items-center justify-between">
+          <div>
+            <p className="text-sm text-green-300 font-medium">File uploaded successfully</p>
+            <p className="text-xs text-green-200 mt-1">{uploadedFile}</p>
+            <p className="text-xs text-green-200">{uploadType === "resume" ? "Resume" : "Notes"}</p>
+          </div>
+          <button
+            onClick={clearUpload}
+            className="text-green-300 hover:text-green-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 
@@ -75,13 +189,8 @@ const ResumeGeneratedQuize: React.FC = () => {
           <h3 className="text-3xl font-bold mb-6 text-gray-100 border-b border-blue-700 pb-2">
             1. Select Quiz Source
           </h3>
-          <div className="space-y-8">
-            <SourceCard
-              icon={<FileSpreadsheet className="w-8 h-8 text-cyan-400" />}
-              title="Resume/Note PDF Upload"
-              desc="Generate quizzes based on your uploaded resume or notes."
-              actionText="Upload"
-            />
+          <div className="space-y-4">
+            <SourceCard />
           </div>
         </div>
 
@@ -96,6 +205,8 @@ const ResumeGeneratedQuize: React.FC = () => {
             </label>
             <textarea
               rows={4}
+              value={customPrompt}
+              onChange={(e) => setCustomPrompt(e.target.value)}
               placeholder="e.g., 'Focus on Python only'"
               className="w-full p-3 rounded-lg bg-black/40 border border-slate-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition"
             ></textarea>
@@ -130,12 +241,12 @@ const ResumeGeneratedQuize: React.FC = () => {
           className={
             buttonClass +
             " text-xl mt-8 " +
-            (!quizType
+            (!quizType || !fileObject
               ? "opacity-50 cursor-not-allowed"
               : "opacity-100 cursor-pointer")
           }
-          disabled={!quizType}
-          onClick={() => setShowQuiz(true)}
+          disabled={!quizType || !fileObject}
+          onClick={generateQuiz}   // <--- SEND PDF TO BACKEND
         >
           Generate Quiz Now
         </button>
