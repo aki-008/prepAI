@@ -53,15 +53,12 @@ class IngestRequest(BaseModel):
 # #--------Notes models--------#
 
 class ChatMessage(BaseModel):
-    role: Literal['user', 'assistant', 'system'] = Field(description="The sender of the message. Must be 'user', 'assistant', or 'system'.")
-    content: str=Field(..., min_length=1, description="The text content of the message.")
+    role: Literal["user", "assistant", "system"] = Field(..., description="Role of the message sender")
+    content: str = Field(..., min_length=1, description="Message content")
 
 class AI_chat_input(BaseModel):
-    messages = List[ChatMessage] = Field(
-        ...,
-        min_length=1,
-        description="The complete conversation history (list of messages) to send to the LLM."
-    )
+    messages: List[ChatMessage] = Field(..., description="Conversation history")
+    context: str = Field(..., description="The content of the note/document to chat about")
     session_id: str | None = Field(
         None, description="The unique ID of the current chat session (optional)."
     )
