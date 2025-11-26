@@ -9,3 +9,15 @@ from chromadb.api.models.Collection import Collection # Import Collection type
 from app.api.deps import get_chroma_collection
 from app.llm import call_llm
 import uuid
+
+
+
+router = APIRouter(prefix="/notes")
+
+@router.post("/ai_chat", status_code=status.HTTP_201_CREATED)
+async def ai_chat(
+    Input_model: IngestRequest, 
+    collection: Collection = Depends(get_chroma_collection), 
+    current_user: User = Depends(get_current_user)
+):
+    pass
