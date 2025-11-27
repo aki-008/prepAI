@@ -66,9 +66,9 @@ async def stream_chat(messages:List[dict], context:str):
     full_history = [system_instruction] + conversation_history
 
     try:
-        # Ensure you are using the async_client initialized earlier
+        
         stream = await client.chat.completions.create(
-            model="openai/gpt-oss-20b", # Recommended for speed/quality on Groq
+            model="openai/gpt-oss-20b",
             messages=full_history,
             temperature=0.7,
             stream=True 

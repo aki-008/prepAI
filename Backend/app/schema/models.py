@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 from typing import  Optional, Literal, List
 from datetime import datetime
-
+from fastapi import FastAPI, UploadFile, File
 
 #--------Auth models--------#
 
@@ -46,11 +46,9 @@ class QuizOutput(BaseModel):
 
 class IngestRequest(BaseModel):
     parsed_doc: str = Field(..., description="The main document content to embed")
-    user_prompt: str = Field(..., description="The user prompt associated with this document")
+    user_prompt: Optional[str] = None
     id: Optional[str] = None
 
-
-# #--------Notes models--------#
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"] = Field(..., description="Role of the message sender")
@@ -62,3 +60,8 @@ class AI_chat_input(BaseModel):
     session_id: str | None = Field(
         None, description="The unique ID of the current chat session (optional)."
     )
+
+#--------Notes page models--------#
+
+class pdf_input(BaseModel):
+    file: UploadFile = File(..., description="The PDF file to be ingested.")
