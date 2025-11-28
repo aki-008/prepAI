@@ -102,7 +102,7 @@ const ResumeGeneratedQuize: React.FC = () => {
 
   // ---------- GENERATE QUIZ ----------
   const generateQuiz = async () => {
-    if (!fileObject || !quizType) return;
+    if (!fileObject || !quizType || !uploadType) return; // Added uploadType check
 
     setIsProcessing(true);
     setFileError(null);
@@ -118,15 +118,23 @@ const ResumeGeneratedQuize: React.FC = () => {
         );
       }
 
-      // 2. Prepare Payload matching Backend `Quiz_input` schema
+      // 2. Prepare Payload
+      // Both /resume and /notes endpoints accept 'parsed_doc' and 'user_prompt'
       const payload = {
         parsed_doc: extractedText.trim(),
         user_prompt:
           customPrompt.trim() || "Generate a quiz based on this content.",
       };
 
-      // 3. Send to Backend
-      const response = await API.post("/quiz/resume", payload);
+      // 3. Determine Endpoint based on Upload Type
+      // If uploadType is "notes", use /quiz/notes (which ingests data)
+      // If uploadType is "resume", use /quiz/resume (transient)
+      const endpoint = uploadType === "notes" ? "/quiz/notes" : "/quiz/resume";
+
+      console.log(`Sending to ${endpoint}...`);
+
+      // 4. Send to Backend
+      const response = await API.post(endpoint, payload);
 
       setQuizData(response.data);
       setShowQuiz(true);
