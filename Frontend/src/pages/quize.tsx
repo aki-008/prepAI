@@ -6,13 +6,13 @@ import {
   Upload,
   X,
   Loader2,
+  Clock,
 } from "lucide-react";
 import MCQQuizPage from "../components/quize/mcq";
 import API from "../api/api"; // Import your Axios instance
 import * as pdfjsLib from "pdfjs-dist";
 
 // Initialize PDF worker
-// In a Vite setup, pointing to a CDN is often the most stable way to avoid build config issues
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const CodingQuizPage = ({ onBack }: any) => (
@@ -34,9 +34,12 @@ const ResumeGeneratedQuize: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileObject, setFileObject] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false); // Loading state
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  // Configuration State
   const [customPrompt, setCustomPrompt] = useState("");
+  const [duration, setDuration] = useState(15); // Default 15 minutes
+
   const [quizData, setQuizData] = useState(null);
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -98,8 +101,6 @@ const ResumeGeneratedQuize: React.FC = () => {
   };
 
   // ---------- GENERATE QUIZ ----------
-  // --- START: Replace your existing generateQuiz function ---
-
   const generateQuiz = async () => {
     if (!fileObject || !quizType) return;
 
@@ -108,6 +109,7 @@ const ResumeGeneratedQuize: React.FC = () => {
 
     try {
       // 1. Extract text on the client side
+      console.log("Extracting text from PDF...");
       const extractedText = await extractTextFromPDF(fileObject);
 
       if (!extractedText.trim()) {
@@ -118,41 +120,33 @@ const ResumeGeneratedQuize: React.FC = () => {
 
       // 2. Prepare Payload matching Backend `Quiz_input` schema
       const payload = {
-        // Ensure extractedText is cleaned up to prevent large string issues
         parsed_doc: extractedText.trim(),
-        // Ensure user_prompt is always a valid string
         user_prompt:
           customPrompt.trim() || "Generate a quiz based on this content.",
       };
 
       // 3. Send to Backend
-      // The URL is now correct: /api/v1/quiz/resume
       const response = await API.post("/quiz/resume", payload);
 
-      // Success
       setQuizData(response.data);
       setShowQuiz(true);
     } catch (error: any) {
       console.error("Quiz Generation Error:", error);
-
-      // Extract detailed error message from FastAPI response body
       let errorMessage = "Failed to generate quiz. Check login status.";
+
       if (error.response?.data?.detail) {
-        // Check if the server returned a validation error list or a simple string
         if (typeof error.response.data.detail === "string") {
           errorMessage = error.response.data.detail;
         } else if (
           Array.isArray(error.response.data.detail) &&
           error.response.data.detail.length > 0
         ) {
-          // Pydantic validation error format
           const firstError = error.response.data.detail[0];
           errorMessage = `Validation Error: Field '${firstError.loc.join(
             " -> "
           )}' ${firstError.msg}`;
         }
       } else if (error.code === "ERR_BAD_REQUEST") {
-        // General network/Axios 400 error
         errorMessage = "Server rejected the data. Are you logged in?";
       }
 
@@ -162,12 +156,16 @@ const ResumeGeneratedQuize: React.FC = () => {
     }
   };
 
-  // --- END: Replace your existing generateQuiz function ---
-
   // Load quiz UI
   if (showQuiz) {
     if (quizType === "mcq")
-      return <MCQQuizPage data={quizData} onBack={() => setShowQuiz(false)} />;
+      return (
+        <MCQQuizPage
+          data={quizData}
+          onBack={() => setShowQuiz(false)}
+          totalTimeSeconds={duration * 60} // Pass user selected time
+        />
+      );
     if (quizType === "coding")
       return (
         <CodingQuizPage data={quizData} onBack={() => setShowQuiz(false)} />
@@ -290,20 +288,47 @@ const ResumeGeneratedQuize: React.FC = () => {
             2. Configure & Generate
           </h3>
 
-          <div className="bg-slate-900/60 rounded-2xl shadow-2xl p-6 border border-slate-800 mb-8">
-            <label className="text-lg font-semibold block mb-3 text-gray-200">
-              Custom Prompt/Instructions (Optional)
-            </label>
-            <textarea
-              rows={4}
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
-              placeholder="e.g., 'Focus on Python only'"
-              className="w-full p-3 rounded-lg bg-black/40 border border-slate-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition"
-            ></textarea>
-            <p className="text-gray-500 text-sm mt-2">
-              This prompt influences the quiz generation.
-            </p>
+          <div className="bg-slate-900/60 rounded-2xl shadow-2xl p-6 border border-slate-800 mb-8 space-y-6">
+            {/* Custom Prompt Input */}
+            <div>
+              <label className="text-lg font-semibold block mb-3 text-gray-200">
+                Custom Prompt/Instructions (Optional)
+              </label>
+              <textarea
+                rows={3}
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                placeholder="e.g., 'Focus on Python only'"
+                className="w-full p-3 rounded-lg bg-black/40 border border-slate-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition"
+              ></textarea>
+              <p className="text-gray-500 text-sm mt-2">
+                This prompt influences the quiz generation.
+              </p>
+            </div>
+
+            {/* NEW: Duration Slider */}
+            <div>
+              <label className="text-lg font-semibold block mb-3 text-gray-200 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-400" /> Quiz Duration
+                </span>
+                <span className="text-blue-400 font-bold">{duration} min</span>
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="60"
+                step="5"
+                value={duration}
+                onChange={(e) => setDuration(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-2">
+                <span>5 min</span>
+                <span>30 min</span>
+                <span>60 min</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
