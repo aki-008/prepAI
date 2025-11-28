@@ -2,13 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User
 from app.models.tables import PDFData
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, get_chroma_collection
 from app.schema import AI_chat_input
 from app.llm import stream_chat
 import uuid
 from fastapi.responses import StreamingResponse
 from chromadb.api.models.Collection import Collection 
-from app.api.deps import get_chroma_collection
 from pathlib import Path
 from llama_index.readers.file import PyMuPDFReader
 from llama_index.core.node_parser import SentenceSplitter
@@ -16,7 +15,7 @@ from typing import Annotated
 import shutil
 import os
 from sentence_transformers import SentenceTransformer
-
+from .quiz import search_logic
 
 router = APIRouter(prefix="/notes")
 
@@ -28,12 +27,15 @@ embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 @router.post("/stream_chat", response_class=StreamingResponse)
 async def ai_chat(
     Input_model: AI_chat_input, 
+    collection: Collection = Depends(get_chroma_collection), 
     current_user: User = Depends(get_current_user)
 ):
     messages_dict = [msg.model_dump() for msg in Input_model.messages]
+    query = f"{Input_model.context};{Input_model.messages[-1].content}"
+    retrieved_docs: str | None = await search_logic(query, collection)
 
     return StreamingResponse(
-        stream_chat(messages_dict, Input_model.context),
+        stream_chat(messages_dict, Input_model.context, retrieved_docs),
         media_type="text/plain"
     )
 

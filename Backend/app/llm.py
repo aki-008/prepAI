@@ -37,36 +37,61 @@ async def call_llm(prompt:str):
 
 
 
-async def stream_chat(messages:List[dict], context:str):
+from typing import List
+
+async def stream_chat(messages: List[dict], context: str, retrieved_docs: str | None):
     system_instruction = {
         "role": "system", 
-        "content": "You are a helpful AI assistant. Answer the user's question strictly based on the provided context."
+        "content": "You are a helpful AI assistant. Answer the user's question based on the provided context and retrieved documents."
     }
     
     conversation_history = [msg.copy() for msg in messages]
 
     if conversation_history and conversation_history[-1]['role'] == 'user':
         last_user_msg = conversation_history[-1]
-        # Rewrite the content to: Context + \n\n + Question
-        last_user_msg['content'] = (
-            f"Here is the context/notes you must use:\n"
-            f"---------------------\n"
-            f"{context}\n"
-            f"---------------------\n\n"
-            f"User Question: {last_user_msg['content']}"
-        )
+        original_question = last_user_msg['content']
+        
+        # Start constructing the augmented prompt
+        augmented_content = ""
+
+        # 1. Add Manual Context
+        if context:
+            augmented_content += (
+                f"Here is the context/notes you must use:\n"
+                f"---------------------\n"
+                f"{context}\n"
+                f"---------------------\n\n"
+            )
+
+        # 2. Add Retrieved Documents (New Logic)
+        if retrieved_docs:
+            augmented_content += (
+                f"Here is background information/retrieved documents:\n"
+                f"---------------------\n"
+                f"{retrieved_docs}\n"
+                f"---------------------\n\n"
+            )
+
+        # 3. Add the User Question
+        augmented_content += f"User Question: {original_question}"
+
+        # Update the message content
+        last_user_msg['content'] = augmented_content
+
     else:
         # Fallback: If for some reason there is no user message, add one.
+        # We combine context and docs here too just in case.
+        combined_context = f"{context}\n\n{retrieved_docs or ''}"
         conversation_history.append({
             "role": "user", 
-            "content": f"Context:\n{context}\n\nPlease analyze this."
+            "content": f"Context:\n{combined_context}\n\nPlease analyze this."
         })
 
-    # 3. Combine System + Modified User History
+    # 4. Combine System + Modified User History
     full_history = [system_instruction] + conversation_history
 
     try:
-        
+        # Ensure 'client' is initialized before this function in your code
         stream = await client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=full_history,
