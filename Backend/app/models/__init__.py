@@ -1,4 +1,4 @@
-from app.models.tables import User
+from app.models.tables import User, PDFData
 
 
-__all__ = [ "User"]
+__all__ = [ "User", "PDFData"]
