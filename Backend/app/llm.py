@@ -5,6 +5,7 @@ from typing import List, Optional, Any
 from app.schema.models import QuizOutput, QuizQuestion
 from app.config import settings
 from openai import AsyncOpenAI
+from typing import List
 
 client = AsyncOpenAI(
     base_url="https://api.groq.com/openai/v1",
@@ -13,7 +14,7 @@ client = AsyncOpenAI(
 
 async def call_llm(prompt:str):
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             # CRUCIAL: Use the LiteLLM format: 'gemini/gemini-2.5-pro'
             model="openai/gpt-oss-20b", 
             messages=[
@@ -35,9 +36,6 @@ async def call_llm(prompt:str):
         print(f"Error calling LiteLLM/Gemini: {e}")
         raise e
 
-
-
-from typing import List
 
 async def stream_chat(messages: List[dict], context: str, retrieved_docs: str | None):
     system_instruction = {
