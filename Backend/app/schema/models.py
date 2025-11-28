@@ -61,6 +61,22 @@ class AI_chat_input(BaseModel):
         None, description="The unique ID of the current chat session (optional)."
     )
 
+class SessionCreate(BaseModel):
+    pdf_id: int
+    name: str = "New Chat"
+
+class SessionResponse(BaseModel):
+    id: str
+    name: str
+    created_at: datetime
+    pdf_id: int
+
+class MessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
 #--------Notes page models--------#
 
 class pdf_input(BaseModel):

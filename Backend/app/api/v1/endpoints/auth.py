@@ -4,7 +4,6 @@ from sqlalchemy import select
 from datetime import timedelta
 from app.schema import UserCreate, LoginRequest
 from app.schema.models import LoginResponse
-# from app.schema.models import LoginRequest
 from app.models import User
 from app.core import verify_password, get_password_hash, create_access_token
 from app.api.deps import get_db

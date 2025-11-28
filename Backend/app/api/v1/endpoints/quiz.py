@@ -14,27 +14,23 @@ import logging
 
 router = APIRouter(prefix="/quiz")
 
+logger = logging.getLogger("uvicorn.error") 
 
-# 1. Set up a logger (if you haven't already globally)
-logger = logging.getLogger("uvicorn.error") # reusing uvicorn's logger ensures it shows up in your terminal
-
-async def search_logic(query: str, collection: Collection):
-    # Log the incoming query
+async def search_logic(query: str, collection: Collection, filter_dict: dict = None):
     logger.info(f"🔍 [Search Logic] Starting search for query: '{query}'")
 
     try:
         results = await collection.query(
-            query_texts=[query],
-            n_results=5
-        )
+        query_texts=[query],
+        n_results=5,
+        where=filter_dict
+    )
         
-        # Log the raw results to see exactly what ChromaDB returned (helps spot NoneTypes)
         logger.info(f"📄 [Search Logic] Raw results from DB: {results}")
 
         if results and results.get('documents') and len(results['documents']) > 0:
             raw_docs = results['documents'][0]
-            
-            # Filter None values and Log how many were found vs valid
+
             valid_docs = [str(doc) for doc in raw_docs if doc is not None]
             
             logger.info(f"✅ [Search Logic] Processing: Found {len(raw_docs)} items. Valid text items: {len(valid_docs)}")
@@ -42,7 +38,6 @@ async def search_logic(query: str, collection: Collection):
             if len(raw_docs) != len(valid_docs):
                 logger.warning("⚠️ [Search Logic] Warning: Some documents contained NoneType and were skipped.")
 
-            # Join with a space (safer than empty string)
             final_context = " ".join(valid_docs)
             return final_context
             
@@ -51,9 +46,7 @@ async def search_logic(query: str, collection: Collection):
             return ""
 
     except Exception as e:
-        # Log the full error if something crashes
         logger.error(f"❌ [Search Logic] CRITICAL ERROR: {str(e)}")
-        # You might want to re-raise the error or return empty depending on your needs
         return ""
 
 @router.get("/search_docs")
