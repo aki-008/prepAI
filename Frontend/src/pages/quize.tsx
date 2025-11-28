@@ -1,6 +1,19 @@
-import React, { useState, useRef } from "react";
-import { FileSpreadsheet, Code2, ListChecks, FileText, Upload, X } from "lucide-react";
-import MCQQuizPage from "../components/quize/mcq"; 
+import React, { useState, useRef, useEffect } from "react";
+import {
+  FileSpreadsheet,
+  Code2,
+  ListChecks,
+  Upload,
+  X,
+  Loader2,
+} from "lucide-react";
+import MCQQuizPage from "../components/quize/mcq";
+import API from "../api/api"; // Import your Axios instance
+import * as pdfjsLib from "pdfjs-dist";
+
+// Initialize PDF worker
+// In a Vite setup, pointing to a CDN is often the most stable way to avoid build config issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const CodingQuizPage = ({ onBack }: any) => (
   <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
@@ -21,16 +34,19 @@ const ResumeGeneratedQuize: React.FC = () => {
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [fileObject, setFileObject] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false); // Loading state
 
   const [customPrompt, setCustomPrompt] = useState("");
   const [quizData, setQuizData] = useState(null);
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const notesInputRef = useRef<HTMLInputElement>(null);
-
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: "resume" | "notes") => {
+  const handleFileUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: "resume" | "notes"
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -40,14 +56,19 @@ const ResumeGeneratedQuize: React.FC = () => {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setFileError(`File size exceeds 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
+      setFileError(
+        `File size exceeds 10MB. Your file is ${(
+          file.size /
+          (1024 * 1024)
+        ).toFixed(2)}MB`
+      );
       return;
     }
 
     setFileError(null);
     setUploadType(type);
     setUploadedFile(file.name);
-    setFileObject(file);       // <-- Store actual file object
+    setFileObject(file);
   };
 
   const handleResumeClick = () => resumeInputRef.current?.click();
@@ -60,38 +81,102 @@ const ResumeGeneratedQuize: React.FC = () => {
     setFileObject(null);
   };
 
-  // ---------- SEND PDF TO BACKEND ----------
+  // --- PDF TEXT EXTRACTION ---
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map((item: any) => item.str).join(" ");
+      fullText += pageText + "\n";
+    }
+
+    return fullText;
+  };
+
+  // ---------- GENERATE QUIZ ----------
+  // --- START: Replace your existing generateQuiz function ---
+
   const generateQuiz = async () => {
     if (!fileObject || !quizType) return;
 
-    const formData = new FormData();
-    formData.append("file", fileObject);
-    formData.append("quiz_type", quizType);
-    formData.append("instructions", customPrompt);
+    setIsProcessing(true);
+    setFileError(null);
 
-    const response = await fetch("http://localhost:8000/generate-quiz", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      // 1. Extract text on the client side
+      const extractedText = await extractTextFromPDF(fileObject);
 
-    const data = await response.json();
+      if (!extractedText.trim()) {
+        throw new Error(
+          "Could not extract text from the PDF. It might be an image-only PDF."
+        );
+      }
 
-    setQuizData(data);   // store quiz data
-    setShowQuiz(true);   // navigate to quiz page
+      // 2. Prepare Payload matching Backend `Quiz_input` schema
+      const payload = {
+        // Ensure extractedText is cleaned up to prevent large string issues
+        parsed_doc: extractedText.trim(),
+        // Ensure user_prompt is always a valid string
+        user_prompt:
+          customPrompt.trim() || "Generate a quiz based on this content.",
+      };
+
+      // 3. Send to Backend
+      // The URL is now correct: /api/v1/quiz/resume
+      const response = await API.post("/quiz/resume", payload);
+
+      // Success
+      setQuizData(response.data);
+      setShowQuiz(true);
+    } catch (error: any) {
+      console.error("Quiz Generation Error:", error);
+
+      // Extract detailed error message from FastAPI response body
+      let errorMessage = "Failed to generate quiz. Check login status.";
+      if (error.response?.data?.detail) {
+        // Check if the server returned a validation error list or a simple string
+        if (typeof error.response.data.detail === "string") {
+          errorMessage = error.response.data.detail;
+        } else if (
+          Array.isArray(error.response.data.detail) &&
+          error.response.data.detail.length > 0
+        ) {
+          // Pydantic validation error format
+          const firstError = error.response.data.detail[0];
+          errorMessage = `Validation Error: Field '${firstError.loc.join(
+            " -> "
+          )}' ${firstError.msg}`;
+        }
+      } else if (error.code === "ERR_BAD_REQUEST") {
+        // General network/Axios 400 error
+        errorMessage = "Server rejected the data. Are you logged in?";
+      }
+
+      setFileError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  // --- END: Replace your existing generateQuiz function ---
 
   // Load quiz UI
   if (showQuiz) {
     if (quizType === "mcq")
       return <MCQQuizPage data={quizData} onBack={() => setShowQuiz(false)} />;
-
     if (quizType === "coding")
-      return <CodingQuizPage data={quizData} onBack={() => setShowQuiz(false)} />;
+      return (
+        <CodingQuizPage data={quizData} onBack={() => setShowQuiz(false)} />
+      );
   }
 
-  // ---- UI COMPONENTS (same as your original) ----
+  // ---- UI COMPONENTS ----
   const buttonClass =
-    "w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 font-medium transition shadow-lg shadow-blue-500/30 text-white mt-4";
+    "w-full py-3 rounded-lg bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 font-medium transition shadow-lg shadow-blue-500/30 text-white mt-4 flex justify-center items-center gap-2";
 
   const OutputTypeOption = ({ icon, title, desc, value }: any) => (
     <div
@@ -118,10 +203,12 @@ const ResumeGeneratedQuize: React.FC = () => {
         <FileSpreadsheet className="w-8 h-8 text-cyan-400" />
         <div>
           <h2 className="text-2xl font-bold">Upload Materials</h2>
-          <p className="text-gray-400 mt-1 text-sm">Upload your resume or notes (Max 10MB)</p>
+          <p className="text-gray-400 mt-1 text-sm">
+            Upload your resume or notes (Max 10MB)
+          </p>
         </div>
       </div>
-      
+
       <input
         ref={resumeInputRef}
         type="file"
@@ -163,9 +250,13 @@ const ResumeGeneratedQuize: React.FC = () => {
       {uploadedFile && (
         <div className="mt-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg flex items-center justify-between">
           <div>
-            <p className="text-sm text-green-300 font-medium">File uploaded successfully</p>
+            <p className="text-sm text-green-300 font-medium">
+              File uploaded successfully
+            </p>
             <p className="text-xs text-green-200 mt-1">{uploadedFile}</p>
-            <p className="text-xs text-green-200">{uploadType === "resume" ? "Resume" : "Notes"}</p>
+            <p className="text-xs text-green-200">
+              {uploadType === "resume" ? "Resume" : "Notes"}
+            </p>
           </div>
           <button
             onClick={clearUpload}
@@ -240,15 +331,20 @@ const ResumeGeneratedQuize: React.FC = () => {
         <button
           className={
             buttonClass +
-            " text-xl mt-8 " +
-            (!quizType || !fileObject
-              ? "opacity-50 cursor-not-allowed"
-              : "opacity-100 cursor-pointer")
+            (!quizType || !fileObject || isProcessing
+              ? " opacity-50 cursor-not-allowed"
+              : " opacity-100 cursor-pointer")
           }
-          disabled={!quizType || !fileObject}
-          onClick={generateQuiz}   // <--- SEND PDF TO BACKEND
+          disabled={!quizType || !fileObject || isProcessing}
+          onClick={generateQuiz}
         >
-          Generate Quiz Now
+          {isProcessing ? (
+            <>
+              <Loader2 className="animate-spin w-5 h-5" /> Generating...
+            </>
+          ) : (
+            "Generate Quiz Now"
+          )}
         </button>
       </div>
     </div>

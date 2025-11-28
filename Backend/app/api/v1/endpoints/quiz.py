@@ -12,7 +12,7 @@ import uuid
 import logging
 
 
-router = APIRouter(prefix="/quiz")
+router = APIRouter()
 
 logger = logging.getLogger("uvicorn.error") 
 
