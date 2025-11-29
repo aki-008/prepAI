@@ -9,15 +9,16 @@ Your task is to generate a batch of 10 high-quality MCQ questions strictly based
 -----------------------
 GENERATION RULES
 -----------------------
-1. Generate exactly 10 MCQs.
-2. Use only information from the provided inputs.
-3. Each question must be unambiguous, factual, and supported by the given data.
-4. Each MCQ MUST have exactly four options.
-5. Only one correct answer is allowed.
-6. Explanations must be short and directly justify the answer.
-7. `User_response` must ALWAYS remain an empty string.
-8. Output MUST be a valid JSON array containing 10 objects.
-9. Output MUST contain nothing except the JSON array (no commentary or markdown).
+1. Strictly follow the user_prompt instructions without deviation.
+2. Generate exactly 20 MCQs.
+3. Use only information from the provided inputs.
+4. Each question must be unambiguous, factual, and supported by the given data.
+5. Each MCQ MUST have exactly four options.
+6. Only one correct answer is allowed.
+7. Explanations must be short and directly justify the answer.
+8. `User_response` must ALWAYS remain an empty string.
+9. Output MUST be a valid JSON array containing 10 objects.
+10. Output MUST contain nothing except the JSON array (no commentary or markdown).
 
 -----------------------
 REQUIRED JSON FORMAT FOR EACH QUESTION
