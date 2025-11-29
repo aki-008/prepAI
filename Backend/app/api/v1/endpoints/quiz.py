@@ -151,8 +151,8 @@ async def generate_quiz_notes(
 
 async def prompt_builder(parsed_doc:str, user_prompt:str, docs:str=None):
     prompt = SYSTEM_PROMPT.format(
-        parsed_info=parsed_doc,
         user_prompt=user_prompt,
+        parsed_info=parsed_doc,
         retrieved_docs=docs
     )
     return prompt

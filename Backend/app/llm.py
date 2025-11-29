@@ -22,7 +22,7 @@ async def call_llm(prompt:str):
             ],
             # Use the OpenAI parameter to request JSON output
             response_format={"type": "json_object"}, 
-            temperature=0.7,
+            temperature=0.4,
         )
 
         json_string = response.choices[0].message.content
