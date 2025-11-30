@@ -18,6 +18,11 @@ class PDFData(Base):
     __tablename__ = "pdf_data"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # 👇 ADD THESE TWO LINES
+    filename: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    # 👆
+    
     pdf_blob: Mapped[bytes] = mapped_column(LargeBinary)
     pdf_embedding: Mapped[list[float]] = mapped_column(JSON)
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))

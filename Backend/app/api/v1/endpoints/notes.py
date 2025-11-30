@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User
 from app.models.tables import PDFData
@@ -19,11 +19,11 @@ from sentence_transformers import SentenceTransformer
 from .quiz import search_logic
 from sqlalchemy import select, desc, asc
 from app.models.tables import ChatSession, ChatMessage
-from app.schema.models import SessionCreate, SessionResponse, MessageResponse
+from app.schema.models import SessionCreate, SessionResponse, MessageResponse , NoteInfo
 from app.database import async_session_maker
 from typing import List
 
-router = APIRouter(prefix="/notes")
+router = APIRouter()
 
 UPLOAD_DIRECTORY = "uploaded_pdfs"
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
@@ -76,7 +76,8 @@ async def upload_notes(
         new_doc = PDFData(
             pdf_blob=file.file.read(),     
             pdf_embedding=doc_embedding,        
-            user_id=current_user.id
+            user_id=current_user.id,
+            filename=file.filename 
         )
         
         db.add(new_doc)
@@ -313,3 +314,35 @@ async def ensure_pdf_in_chroma(pdf_id: int, db: AsyncSession, collection: Collec
         # Cleanup temp file
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+
+@router.get("/", response_model=List[NoteInfo])
+async def get_all_notes(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Fetch all uploaded PDFs for the sidebar list."""
+    result = await db.execute(
+        select(PDFData.id, PDFData.filename, PDFData.created_at)
+        .where(PDFData.user_id == current_user.id)
+        .order_by(desc(PDFData.created_at))
+    )
+    return result.all()
+
+
+@router.get("/{pdf_id}/content")
+async def get_pdf_content(
+    pdf_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Serve the raw PDF binary data for the viewer."""
+    result = await db.execute(
+        select(PDFData).where(PDFData.id == pdf_id, PDFData.user_id == current_user.id)
+    )
+    pdf = result.scalar_one_or_none()
+    
+    if not pdf:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    # Return raw bytes with PDF mime type so browser/frontend can render it
+    return Response(content=pdf.pdf_blob, media_type="application/pdf")
