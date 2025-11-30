@@ -81,3 +81,8 @@ class MessageResponse(BaseModel):
 
 class pdf_input(BaseModel):
     file: UploadFile = File(..., description="The PDF file to be ingested.")
+
+class NoteInfo(BaseModel):
+    id: int
+    filename: str
+    created_at: datetime

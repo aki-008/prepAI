@@ -1,37 +1,159 @@
-import React from "react";
-import { History, RefreshCw, Plus, Upload, Menu, X, Send, MessageSquare } from "lucide-react";
-
-// Placeholder data for the long text at the bottom (PDF Highlighting)
-const samplePDFHighlight = `So far, we've applied log() to the softmax output, but have neither explained what "log" is nor why we use it. We do this for one key reason. In deep learning and optimization, where derivatives, gradients, and optimizations suffice it to say that the log function has some desirable properties. Log is short for logarithm and is defined as the solution to: "The integer a must be taken of the base b so that the equation b^x = a can be solved with a log function which evaluates log_b(a)." This property of the log function is especially beneficial where e (Euler's number or ≈ 2.71828) is used in the base (where 10 is in the example). The logarithm with e as the base is referred to as the natural logarithm and doesn't use the 'log_e' - you may also see this written as ln(x) or log(x)`;
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import React, { useEffect, useState, useRef } from "react";
+import {
+  History,
+  RefreshCw,
+  Plus,
+  Upload,
+  Menu,
+  X,
+  Send,
+  MessageSquare,
+  Loader2,
+  FileText,
+} from "lucide-react";
+import {
+  fetchNotes,
+  uploadNote,
+  fetchNoteBlob,
+  createChatSession,
+  streamChatRequest,
+  fetchChatHistory,
+  type Note,
+  type ChatMessage,
+} from "../api/notesService";
 
 const Notes: React.FC = () => {
-  // State to manage the left sidebar's open/close status
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-  
-  // NEW STATE: State to manage the right chat panel's open/close status
-  const [isChatOpen, setIsChatOpen] = React.useState(true);
+  // --- UI State ---
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Toggle function for the left sidebar
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  // --- Data State ---
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [currentNote, setCurrentNote] = useState<Note | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  // --- Chat State ---
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  // 1. Load Notes on Mount
+  useEffect(() => {
+    loadNotes();
+  }, []);
+
+  const loadNotes = async () => {
+    try {
+      const data = await fetchNotes();
+      setNotes(data);
+    } catch (error) {
+      console.error("Failed to load notes", error);
+    }
   };
-  
-  // Toggle function for the right chat panel
-  const toggleChat = () => {
-    setIsChatOpen(!isChatOpen);
+
+  // 2. Handle File Upload
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const newNote = await uploadNote(file);
+      setNotes([newNote, ...notes]); // Add new note to top of list
+      handleNoteSelect(newNote); // Auto-select the uploaded note
+    } catch (error) {
+      console.error("Upload failed", error);
+      alert("Failed to upload PDF");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // 3. Handle Note Selection (Viewer & Chat Init)
+  const handleNoteSelect = async (note: Note) => {
+    setCurrentNote(note);
+    setPdfUrl(null); // Clear previous PDF to show loading state
+    setMessages([]); // Clear previous chat
+    setSessionId(null);
+
+    // A. Fetch PDF Blob for Viewer
+    try {
+      const blob = await fetchNoteBlob(note.id);
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } catch (error) {
+      console.error("Failed to load PDF content", error);
+    }
+
+    // B. Initialize Chat Session
+    try {
+      // Create a new session for this file
+      // (In a real app, you might check for existing sessions first)
+      const session = await createChatSession(
+        note.id,
+        `Chat - ${note.filename}`
+      );
+      setSessionId(session.id);
+
+      // Add a system welcome message
+      setMessages([
+        { role: "assistant", content: `Ready to chat about ${note.filename}!` },
+      ]);
+    } catch (error) {
+      console.error("Failed to init chat session", error);
+    }
+  };
+
+  // 4. Handle Chat Streaming
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !sessionId) return;
+
+    const userMsg = inputMessage;
+    setInputMessage(""); // Clear input
+
+    // Add User Message Optimistically
+    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+    setIsChatLoading(true);
+
+    // Placeholder for AI response
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
+    await streamChatRequest(
+      sessionId,
+      userMsg,
+      (chunk) => {
+        setMessages((prev) => {
+          const newArr = [...prev];
+          const lastIndex = newArr.length - 1;
+          newArr[lastIndex] = {
+            ...newArr[lastIndex],
+            content: newArr[lastIndex].content + chunk,
+          };
+
+          return newArr;
+        });
+      },
+      (err) => {
+        console.error("Stream error", err);
+        setIsChatLoading(false);
+      }
+    );
   };
 
   return (
-    // Outer container: Black background, full height, flex layout
     <div className="flex bg-black h-screen overflow-hidden">
-      
-      {/* 1. Left Sidebar: My Notes (Toggleable) */}
+      {/* --- Left Sidebar: My Notes --- */}
       <div
-        className={`
-          h-screen flex-shrink-0 transition-all duration-300 ease-in-out
-          bg-gray-900 border-r border-gray-700 flex flex-col gap-4 shadow-2xl
-          ${isSidebarOpen ? 'w-64 p-4' : 'w-0 p-0 overflow-hidden'}
-        `}
+        className={`h-screen shrink-0 transition-all duration-300 bg-gray-900 border-r border-gray-700 flex flex-col gap-4 ${
+          isSidebarOpen ? "w-64 p-4" : "w-0 p-0 overflow-hidden"
+        }`}
       >
         {isSidebarOpen && (
           <>
@@ -39,137 +161,175 @@ const Notes: React.FC = () => {
               My Notes
             </h3>
 
-            {/* Navigation/Action Buttons */}
-            <button
-              className="flex items-center gap-3 w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition duration-150 font-semibold whitespace-nowrap"
-              aria-label="Create New Note"
-            >
-              <Plus size={20} />
-              New Notes
-            </button>
+            {/* Hidden Input for Upload */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="application/pdf"
+              onChange={handleFileChange}
+            />
 
             <button
-              className="flex items-center gap-3 w-full text-gray-300 px-4 py-3 rounded-lg hover:bg-gray-700 hover:text-white transition duration-150 whitespace-nowrap"
-              aria-label="Upload Notes"
+              onClick={handleUploadClick}
+              disabled={isUploading}
+              className="flex items-center gap-3 w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
             >
-              <Upload size={20} />
-              Upload
+              {isUploading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <Upload size={20} />
+              )}
+              {isUploading ? "Uploading..." : "Upload New PDF"}
             </button>
-            
-            <div className="mt-4 pt-4 border-t border-gray-700 space-y-2">
-                <p className="text-sm text-gray-400">History</p>
-                <div className="text-gray-200 bg-gray-700 p-2 rounded-md cursor-pointer hover:bg-gray-600">notes.pdf</div>
-                <div className="text-gray-200 p-2 rounded-md cursor-pointer hover:bg-gray-600">notes2.pdf</div>
-                <div className="text-gray-200 p-2 rounded-md cursor-pointer hover:bg-gray-600">notes3.pdf</div>
+
+            <div className="mt-4 pt-4 border-t border-gray-700 space-y-2 overflow-y-auto">
+              <p className="text-sm text-gray-400 uppercase tracking-wider">
+                History
+              </p>
+              {notes.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => handleNoteSelect(note)}
+                  className={`text-gray-200 p-3 rounded-md cursor-pointer flex items-center gap-2 hover:bg-gray-700 transition ${
+                    currentNote?.id === note.id
+                      ? "bg-gray-800 border border-blue-500"
+                      : ""
+                  }`}
+                >
+                  <FileText size={16} className="text-blue-400" />
+                  <span className="truncate text-sm">{note.filename}</span>
+                </div>
+              ))}
             </div>
           </>
         )}
       </div>
-      
-      {/* 2. Middle & Right Columns Container */}
-      <div className="flex flex-1 overflow-hidden">
-          
-          {/* Main Content (PDF Viewer & Highlighting) */}
-          <div className="flex flex-col flex-1 p-6 overflow-y-auto">
-              
-              {/* Top Header/Toggle */}
-              <header className="flex justify-between items-center mb-6">
-                  <div className="flex items-center gap-4">
-                      {/* Left Sidebar Toggle Button */}
-                      <button
-                          onClick={toggleSidebar}
-                          className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200"
-                          aria-label={isSidebarOpen ? "Close Left Sidebar" : "Open Left Sidebar"}
-                      >
-                          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
-                      </button>
-                      <h2 className="text-2xl font-extrabold text-white">Notes Page / PDF Viewer</h2>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    {/* Right Chat Toggle Button (Visible only when chat is CLOSED) */}
-                    {!isChatOpen && (
-                        <button
-                            onClick={toggleChat}
-                            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-150 font-medium shadow-md"
-                            aria-label="Open AI Chat"
-                        >
-                            <MessageSquare size={18} />
-                            AI Chat
-                        </button>
-                    )}
-                  </div>
-              </header>
 
-              {/* PDF Viewer Area */}
-              <div className="flex-1 bg-gray-700 rounded-xl shadow-inner border-2 border-gray-600 mb-6 p-4 flex-col items-center justify-center">
-                  <p className="text-white text-xl font-medium">PDF View</p>
-                  <p className="text-white text-xl font-medium">{samplePDFHighlight}</p>
+      {/* --- Center: PDF Viewer --- */}
+      <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-col flex-1 p-0 bg-gray-800">
+          <header className="flex justify-between items-center p-4 bg-black/40 backdrop-blur-sm absolute top-0 w-full z-10">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+            >
+              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <h2 className="text-lg font-semibold text-white truncate max-w-md">
+              {currentNote ? currentNote.filename : "Select a Note"}
+            </h2>
+            {!isChatOpen && (
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
+              >
+                <MessageSquare size={16} /> Chat
+              </button>
+            )}
+          </header>
+
+          {/* PDF Frame */}
+          <div className="flex-1 w-full h-full pt-16">
+            {pdfUrl ? (
+              <iframe
+                src={pdfUrl}
+                className="w-full h-full border-none"
+                title="PDF Viewer"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <FileText size={64} className="mb-4 opacity-50" />
+                <p>Select a PDF from the sidebar to view</p>
               </div>
-
-              
-
-          </div>
-          
-          {/* 3. Right Chat Panel (Toggleable) */}
-          <div
-             className={`
-                flex flex-col bg-gray-900 border-l border-gray-700 p-4 flex-shrink-0 transition-all duration-300 ease-in-out
-                ${isChatOpen ? 'w-80' : 'w-0 p-0 overflow-hidden'}
-             `}
-          >
-            {isChatOpen && (
-                <>
-                    <header className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
-                        <h3 className="text-xl font-bold text-white">
-                            Chat
-                        </h3>
-                        {/* Close button for the chat panel */}
-                        <button
-                            onClick={toggleChat}
-                            className="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150"
-                            aria-label="Close Chat Panel"
-                        >
-                            <X size={20} />
-                        </button>
-                    </header>
-                    
-                    {/* Chat Messages Area */}
-                    <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                        <p className="text-gray-400 text-sm">AI to chat with notes</p>
-                        {/* Mock Chat Messages */}
-                        <div className="flex justify-end">
-                            <div className="bg-blue-600 text-white p-3 rounded-lg max-w-[80%]">
-                                What are the key concepts on this page?
-                            </div>
-                        </div>
-                        <div className="flex justify-start">
-                            <div className="bg-gray-700 text-white p-3 rounded-lg max-w-[80%]">
-                                The key concepts are the definition of the $\\log$ function and why it is used in deep learning and optimization due to its desirable properties for derivatives and gradients.
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Chat Input Area */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        <input
-                            type="text"
-                            placeholder="Type here..."
-                            className="flex-1 p-3 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
-                        <button
-                            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition duration-150"
-                            aria-label="Send Message"
-                        >
-                            <Send size={20} />
-                        </button>
-                    </div>
-                </>
             )}
           </div>
-          
+        </div>
+
+        {/* --- Right: Chat Panel --- */}
+        <div
+          className={`flex flex-col bg-gray-900 border-l border-gray-700 flex-shrink-0 transition-all duration-300 ${
+            isChatOpen ? "w-96" : "w-0"
+          }`}
+        >
+          {isChatOpen && (
+            <>
+              <header className="flex justify-between items-center p-4 border-b border-gray-700">
+                <h3 className="text-lg font-bold text-white">AI Chat</h3>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X size={20} />
+                </button>
+              </header>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 && (
+                  <p className="text-gray-500 text-center text-sm mt-10">
+                    Ask a question about this document...
+                  </p>
+                )}
+                {messages.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div
+                      className={`max-w-[85%] p-3 rounded-lg text-sm ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-700 text-gray-200 prose prose-invert max-w-none"
+                      }`}
+                    >
+                      {/* --- MARKDOWN RENDERING CHANGE IS HERE --- */}
+                      {msg.role === "assistant" ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {isChatLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-700 p-3 rounded-lg">
+                      <Loader2 className="animate-spin w-4 h-4 text-blue-400" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="p-4 border-t border-gray-700">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    placeholder="Type your question..."
+                    className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-blue-500"
+                    disabled={!sessionId}
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!sessionId || isChatLoading}
+                    className="bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-      
     </div>
   );
 };
