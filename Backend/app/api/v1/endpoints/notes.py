@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Response, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import User
 from app.models.tables import PDFData
@@ -346,3 +346,65 @@ async def get_pdf_content(
 
     # Return raw bytes with PDF mime type so browser/frontend can render it
     return Response(content=pdf.pdf_blob, media_type="application/pdf")
+
+
+# -------------------------
+# NEW: Delete Note
+# -------------------------
+@router.delete("/{note_id}")
+async def delete_note(
+    note_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    collection: Collection = Depends(get_chroma_collection)
+):
+    # 1. Check ownership
+    result = await db.execute(
+        select(PDFData).where(PDFData.id == note_id, PDFData.user_id == current_user.id)
+    )
+    note = result.scalar_one_or_none()
+    
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    # 2. Delete from ChromaDB (using metadata filter)
+    try:
+        # This deletes all chunks where metadata field 'pdf_id' matches
+        await collection.delete(where={"pdf_id": note_id})
+    except Exception as e:
+        print(f"Error deleting from Chroma: {e}")
+        # Proceed to delete from DB even if Chroma fails to avoid sync issues
+
+    # 3. Delete from Database (Cascades to Sessions/Messages)
+    await db.delete(note)
+    await db.commit()
+
+    return {"status": "success", "message": "Note deleted"}
+
+# -------------------------
+# NEW: Rename Note
+# -------------------------
+@router.put("/{note_id}")
+async def rename_note(
+    note_id: int,
+    new_filename: str = Body(..., embed=True), # Expects JSON: { "new_filename": "foo.pdf" }
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(PDFData).where(PDFData.id == note_id, PDFData.user_id == current_user.id)
+    )
+    note = result.scalar_one_or_none()
+    
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    note.filename = new_filename
+    await db.commit()
+    await db.refresh(note)
+    
+    return {
+        "id": note.id,
+        "filename": note.filename,
+        "created_at": note.created_at
+    }
