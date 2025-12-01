@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { User, Mail, Lock, UserPlus } from "lucide-react";
-import API from "../../api/api"; // Assuming the API file is one directory up
+import API from "../../api/api";
 
 interface SignUpProps {
   onClose: () => void;
   onSwitchToSignIn: () => void;
-  onAuthSuccess: (username: string) => void;
+  // ✅ UPDATED: Signature now includes token
+  onAuthSuccess: (username: string, token: string) => void;
 }
 
 const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
@@ -24,34 +25,33 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
     }
 
     try {
-      // 1. Registration via API (uses axios and the correct base URL)
+      // 1. Register via API
       await API.post("/auth/register", {
         username,
         email,
         password,
       });
 
-      // 2. Login immediately after successful registration
+      // 2. Login immediately after to get the token
       const loginResponse = await API.post("/auth/login", {
         email,
         password,
       });
 
-      // The response data is directly on response.data when using axios
-      const loginData = loginResponse.data;
-      localStorage.setItem("token", loginData.access_token);
-      const loggedInUsername = loginData.username;
-      onAuthSuccess(loggedInUsername);
+      // Extract token and username
+      const { access_token, username: loggedInUser } = loginResponse.data;
+
+      // 3. Pass both to the parent handler
+      [cite_start]; // This ensures the AuthContext gets the token to persist the session [cite: 334, 335, 336]
+      onAuthSuccess(loggedInUser, access_token);
     } catch (err: any) {
       console.error("Registration/Login error:", err);
 
-      // Axios error handling: Check for response data and detail for custom error message
       let errorMessage = "Registration failed";
+      // Handle FastAPI error details
       if (err.response && err.response.data && err.response.data.detail) {
-        // Extracts the specific error detail from FastAPI (e.g., 'Username already registered')
         errorMessage = err.response.data.detail;
       } else if (err.message) {
-        // Use generic network or request error message
         errorMessage = err.message;
       }
 
@@ -126,7 +126,7 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
 
         <button
           onClick={handleSubmit}
-          className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition"
+          className="w-full px-5 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition"
         >
           <UserPlus className="w-5 h-5" />
           Sign Up
@@ -135,7 +135,10 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
 
       <p className="mt-8 text-center text-sm text-gray-400">
         Already have an account?
-        <button onClick={onSwitchToSignIn} className="text-blue-400 ml-2 hover:underline">
+        <button
+          onClick={onSwitchToSignIn}
+          className="text-blue-400 ml-2 hover:underline"
+        >
           Sign In
         </button>
       </p>
