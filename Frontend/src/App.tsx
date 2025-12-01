@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 
 import Home from "./pages/home";
 import Dashboard from "./pages/dashboard";
@@ -10,15 +16,13 @@ import Sidebar from "./components/dashboard/Sidebar";
 
 import { AuthProvider, useAuth } from "./components/context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import { Loader2 } from "lucide-react";
 
+// Layout for authenticated users
 const DashboardLayout = () => {
-  // 1. Retrieve both logout and username from the AuthContext
-
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* 2. Pass the retrieved username prop to the Sidebar */}
-      <Sidebar/>
-
+      <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <Routes>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -32,36 +36,53 @@ const DashboardLayout = () => {
   );
 };
 
-const App: React.FC = () => {
+// Wrapper for Home to handle "If logged in, go to dashboard" logic
+const HomeWrapper = () => {
+  const { isAuthenticated, login } = useAuth();
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <Home onLogin={login} />;
+};
+
+// Main Routing Logic extracted to use AuthContext
+const AppRoutes = () => {
+  const { isLoading } = useAuth();
+
+  // 1. Show a loading spinner while checking auth state
+  // This prevents the "flash" of redirecting to home/dashboard on reload
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
+        <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Home */}
-          <Route path="/" element={<HomeWrapper />} />
+    <Router>
+      <Routes>
+        {/* Public Home */}
+        <Route path="/" element={<HomeWrapper />} />
 
-          {/* Protected all dashboard routes */}
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          />
-
-        </Routes>
-      </Router>
-    </AuthProvider>
+        {/* Protected Dashboard Routes */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Router>
   );
 };
 
-const HomeWrapper = () => {
-  const { isAuthenticated, login } = useAuth();
-
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
-
-  return <Home onLogin={login} />;
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
 };
 
 export default App;

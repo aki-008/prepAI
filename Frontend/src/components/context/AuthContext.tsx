@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean; // <--- Added: Tracks if we are still checking local storage
   username: string;
   login: (name: string, token: string) => void;
   logout: () => void;
@@ -12,15 +13,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("Guest");
+  const [isLoading, setIsLoading] = useState(true); // <--- Start loading immediately
 
-  // ✅ FIX: Check localStorage on mount to persist session
   useEffect(() => {
+    // Check local storage on initial load
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("username");
+
     if (token) {
       setIsAuthenticated(true);
       if (storedUser) setUsername(storedUser);
     }
+
+    // Done checking, stop loading
+    setIsLoading(false);
   }, []);
 
   const login = (name: string, token: string) => {
@@ -38,7 +44,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, username, login, logout }}>
+    <AuthContext.Provider
+      value={{ isAuthenticated, isLoading, username, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
