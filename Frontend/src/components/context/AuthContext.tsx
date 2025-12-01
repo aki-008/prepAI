@@ -1,11 +1,9 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  // 1. Added username to the context type
   username: string;
-  // 2. Updated login signature to accept the username string
-  login: (name: string) => void;
+  login: (name: string, token: string) => void;
   logout: () => void;
 }
 
@@ -13,19 +11,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // 3. New state to hold the logged-in user's name
-  const [username, setUsername] = useState('Guest');
+  const [username, setUsername] = useState("Guest");
 
-  // 4. Updated login function to accept and set the username
-  const login = (name: string) => {
+  // ✅ FIX: Check localStorage on mount to persist session
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("username");
+    if (token) {
+      setIsAuthenticated(true);
+      if (storedUser) setUsername(storedUser);
+    }
+  }, []);
+
+  const login = (name: string, token: string) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("username", name);
     setUsername(name);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    // Reset state on logout
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
     setIsAuthenticated(false);
-    setUsername('Guest');
+    setUsername("Guest");
   };
 
   return (

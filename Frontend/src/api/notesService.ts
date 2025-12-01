@@ -14,6 +14,13 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface Session {
+  id: string;
+  name: string;
+  created_at: string;
+  pdf_id: number;
+}
+
 // 1. Fetch the list of PDFs for the Sidebar
 export const fetchNotes = async (): Promise<Note[]> => {
   const response: AxiosResponse<Note[]> = await API.get("/notes/");
@@ -72,6 +79,11 @@ export const createChatSession = async (
 // 6. Get Chat History
 export const fetchChatHistory = async (sessionId: string) => {
   const response = await API.get(`/notes/history/${sessionId}`);
+  return response.data;
+};
+
+export const fetchSessions = async (pdfId: number): Promise<Session[]> => {
+  const response = await API.get(`/notes/sessions/${pdfId}`);
   return response.data;
 };
 

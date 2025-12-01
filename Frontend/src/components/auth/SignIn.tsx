@@ -4,7 +4,7 @@ import API from "../../api/api";
 import { useAuth } from "../context/AuthContext";
 
 interface SignInProps {
-  onSwitchToSignUp: () => void;  // ✅ Add this if switching modal
+  onSwitchToSignUp: () => void;
 }
 
 const SignIn: React.FC<SignInProps> = ({ onSwitchToSignUp }) => {
@@ -20,19 +20,17 @@ const SignIn: React.FC<SignInProps> = ({ onSwitchToSignUp }) => {
     try {
       const res = await API.post("/auth/login", { email, password });
 
-      // ✅ FIXED — use res instead of response
-      login(res.data.username || res.data.user?.username || "User");
-
-      localStorage.setItem("token", res.data.access_token);
-
+      // ✅ UPDATED: Pass token to login() to persist session
+      login(
+        res.data.username || res.data.user?.username || "User",
+        res.data.access_token
+      );
     } catch (err: any) {
       console.error("Login error:", err);
 
       let errorMessage = "Login failed.";
-
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
-
         if (typeof detail === "string") errorMessage = detail;
         else if (Array.isArray(detail)) {
           const first = detail[0];
@@ -46,7 +44,9 @@ const SignIn: React.FC<SignInProps> = ({ onSwitchToSignUp }) => {
 
   return (
     <>
-      <h2 className="text-3xl font-bold mb-8 text-center text-white">Welcome Back</h2>
+      <h2 className="text-3xl font-bold mb-8 text-center text-white">
+        Welcome Back
+      </h2>
 
       {error && <p className="text-red-400 text-center mb-3">{error}</p>}
 
@@ -83,7 +83,7 @@ const SignIn: React.FC<SignInProps> = ({ onSwitchToSignUp }) => {
 
         <button
           type="submit"
-          className="w-full px-5 py-3 rounded-lg bg-linear-to-r from-blue-500 to-gray-500 text-white flex items-center justify-center gap-2"
+          className="w-full px-5 py-3 rounded-lg bg-gradient-to-r from-blue-500 to-gray-500 text-white flex items-center justify-center gap-2"
         >
           <LogIn className="w-5 h-5" />
           Sign In

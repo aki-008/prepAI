@@ -1,17 +1,14 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
-  History,
-  RefreshCw,
-  Plus,
   Upload,
   Menu,
   X,
   Send,
-  MessageSquare,
   Loader2,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 import {
   fetchNotes,
@@ -20,6 +17,7 @@ import {
   createChatSession,
   streamChatRequest,
   fetchChatHistory,
+  fetchSessions, // ✅ Import this
   type Note,
   type ChatMessage,
 } from "../api/notesService";
@@ -30,6 +28,10 @@ const Notes: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ✅ Resizable Chat State
+  const [chatWidth, setChatWidth] = useState(450); // Default width
+  const [isResizing, setIsResizing] = useState(false);
 
   // --- Data State ---
   const [notes, setNotes] = useState<Note[]>([]);
@@ -47,6 +49,32 @@ const Notes: React.FC = () => {
     loadNotes();
   }, []);
 
+  // ✅ Handle Resizing Logic
+  const startResizing = useCallback(() => setIsResizing(true), []);
+  const stopResizing = useCallback(() => setIsResizing(false), []);
+
+  const resize = useCallback(
+    (mouseMoveEvent: MouseEvent) => {
+      if (isResizing) {
+        // Calculate new width based on mouse position from the right edge
+        const newWidth = document.body.clientWidth - mouseMoveEvent.clientX;
+        if (newWidth > 300 && newWidth < 800) {
+          setChatWidth(newWidth);
+        }
+      }
+    },
+    [isResizing]
+  );
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
   const loadNotes = async () => {
     try {
       const data = await fetchNotes();
@@ -56,7 +84,6 @@ const Notes: React.FC = () => {
     }
   };
 
-  // 2. Handle File Upload
   const handleUploadClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,8 +93,8 @@ const Notes: React.FC = () => {
     setIsUploading(true);
     try {
       const newNote = await uploadNote(file);
-      setNotes([newNote, ...notes]); // Add new note to top of list
-      handleNoteSelect(newNote); // Auto-select the uploaded note
+      setNotes([newNote, ...notes]);
+      handleNoteSelect(newNote);
     } catch (error) {
       console.error("Upload failed", error);
       alert("Failed to upload PDF");
@@ -76,14 +103,15 @@ const Notes: React.FC = () => {
     }
   };
 
-  // 3. Handle Note Selection (Viewer & Chat Init)
+  // ✅ FIX: Load History Logic (Issue 1)
   const handleNoteSelect = async (note: Note) => {
     setCurrentNote(note);
-    setPdfUrl(null); // Clear previous PDF to show loading state
-    setMessages([]); // Clear previous chat
+    setPdfUrl(null);
+    setMessages([]);
     setSessionId(null);
+    setIsChatOpen(true); // Auto open chat on select
 
-    // A. Fetch PDF Blob for Viewer
+    // A. Fetch PDF Blob
     try {
       const blob = await fetchNoteBlob(note.id);
       const url = URL.createObjectURL(blob);
@@ -92,59 +120,81 @@ const Notes: React.FC = () => {
       console.error("Failed to load PDF content", error);
     }
 
-    // B. Initialize Chat Session
+    // B. Check for existing sessions -> Get History OR Create New
     try {
-      // Create a new session for this file
-      // (In a real app, you might check for existing sessions first)
-      const session = await createChatSession(
-        note.id,
-        `Chat - ${note.filename}`
-      );
-      setSessionId(session.id);
+      const existingSessions = await fetchSessions(note.id);
 
-      // Add a system welcome message
-      setMessages([
-        { role: "assistant", content: `Ready to chat about ${note.filename}!` },
-      ]);
+      if (existingSessions.length > 0) {
+        // Load the most recent session
+        const lastSession = existingSessions[0];
+        setSessionId(lastSession.id);
+
+        // Fetch actual messages
+        const history = await fetchChatHistory(lastSession.id);
+        // Map backend history to frontend format
+        const formattedHistory: ChatMessage[] = history.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+        setMessages(formattedHistory);
+      } else {
+        // No session exists, create one
+        const session = await createChatSession(
+          note.id,
+          `Chat - ${note.filename}`
+        );
+        setSessionId(session.id);
+        setMessages([
+          {
+            role: "assistant",
+            content: `Ready to chat about ${note.filename}!`,
+          },
+        ]);
+      }
     } catch (error) {
       console.error("Failed to init chat session", error);
     }
   };
 
-  // 4. Handle Chat Streaming
+  // ✅ FIX: Loading State Bug (Issue 4)
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !sessionId) return;
 
     const userMsg = inputMessage;
-    setInputMessage(""); // Clear input
+    setInputMessage("");
 
-    // Add User Message Optimistically
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
-    setIsChatLoading(true);
+    setIsChatLoading(true); // Start loading
 
-    // Placeholder for AI response
+    // Placeholder
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-    await streamChatRequest(
-      sessionId,
-      userMsg,
-      (chunk) => {
-        setMessages((prev) => {
-          const newArr = [...prev];
-          const lastIndex = newArr.length - 1;
-          newArr[lastIndex] = {
-            ...newArr[lastIndex],
-            content: newArr[lastIndex].content + chunk,
-          };
-
-          return newArr;
-        });
-      },
-      (err) => {
-        console.error("Stream error", err);
-        setIsChatLoading(false);
-      }
-    );
+    try {
+      await streamChatRequest(
+        sessionId,
+        userMsg,
+        (chunk) => {
+          setMessages((prev) => {
+            const newArr = [...prev];
+            const lastIndex = newArr.length - 1;
+            newArr[lastIndex] = {
+              ...newArr[lastIndex],
+              content: newArr[lastIndex].content + chunk,
+            };
+            return newArr;
+          });
+        },
+        (err) => {
+          console.error("Stream error", err);
+          // Don't set loading false here, let finally handle it
+        }
+      );
+    } catch (e) {
+      console.error("Chat Request Error", e);
+    } finally {
+      // ✅ Ensure loading stops regardless of success/fail so button enables
+      setIsChatLoading(false);
+    }
   };
 
   return (
@@ -160,8 +210,6 @@ const Notes: React.FC = () => {
             <h3 className="text-xl font-bold text-white mb-2 border-b border-gray-700 pb-2">
               My Notes
             </h3>
-
-            {/* Hidden Input for Upload */}
             <input
               type="file"
               ref={fileInputRef}
@@ -169,7 +217,6 @@ const Notes: React.FC = () => {
               accept="application/pdf"
               onChange={handleFileChange}
             />
-
             <button
               onClick={handleUploadClick}
               disabled={isUploading}
@@ -182,7 +229,6 @@ const Notes: React.FC = () => {
               )}
               {isUploading ? "Uploading..." : "Upload New PDF"}
             </button>
-
             <div className="mt-4 pt-4 border-t border-gray-700 space-y-2 overflow-y-auto">
               <p className="text-sm text-gray-400 uppercase tracking-wider">
                 History
@@ -229,7 +275,6 @@ const Notes: React.FC = () => {
             )}
           </header>
 
-          {/* PDF Frame */}
           <div className="flex-1 w-full h-full pt-16">
             {pdfUrl ? (
               <iframe
@@ -246,16 +291,27 @@ const Notes: React.FC = () => {
           </div>
         </div>
 
-        {/* --- Right: Chat Panel --- */}
+        {/* --- ✅ Resizable Chat Panel (Issue 3) --- */}
+        {isChatOpen && (
+          // Drag Handle
+          <div
+            className="w-1.5 cursor-col-resize bg-gray-800 hover:bg-blue-500 transition-colors z-20 flex items-center justify-center"
+            onMouseDown={startResizing}
+          >
+            {/* Tiny indicator for grip */}
+            <div className="h-8 w-0.5 bg-gray-600 rounded"></div>
+          </div>
+        )}
+
         <div
-          className={`flex flex-col bg-gray-900 border-l border-gray-700 flex-shrink-0 transition-all duration-300 ${
-            isChatOpen ? "w-96" : "w-0"
-          }`}
+          style={{ width: isChatOpen ? chatWidth : 0 }}
+          className={`flex flex-col bg-gray-900 border-l border-gray-700 flex-shrink-0 transition-all duration-75 ease-out`}
         >
           {isChatOpen && (
             <>
               <header className="flex justify-between items-center p-4 border-b border-gray-700">
                 <h3 className="text-lg font-bold text-white">AI Chat</h3>
+                {/* Close Button is here */}
                 <button
                   onClick={() => setIsChatOpen(false)}
                   className="text-gray-400 hover:text-white"
@@ -264,7 +320,6 @@ const Notes: React.FC = () => {
                 </button>
               </header>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 && (
                   <p className="text-gray-500 text-center text-sm mt-10">
@@ -285,7 +340,6 @@ const Notes: React.FC = () => {
                           : "bg-gray-700 text-gray-200 prose prose-invert max-w-none"
                       }`}
                     >
-                      {/* --- MARKDOWN RENDERING CHANGE IS HERE --- */}
                       {msg.role === "assistant" ? (
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.content}
@@ -305,7 +359,6 @@ const Notes: React.FC = () => {
                 )}
               </div>
 
-              {/* Input */}
               <div className="p-4 border-t border-gray-700">
                 <div className="flex gap-2">
                   <input
@@ -315,12 +368,12 @@ const Notes: React.FC = () => {
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Type your question..."
                     className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-blue-500"
-                    disabled={!sessionId}
+                    disabled={!sessionId || isChatLoading}
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={!sessionId || isChatLoading}
-                    className="bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     <Send size={20} />
                   </button>
