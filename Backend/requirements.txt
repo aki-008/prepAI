@@ -20,3 +20,7 @@ llama-index-core
 llama-index-readers-file 
 llama-index-llms-ollama 
 llama-index-embeddings-huggingface
+groq 
+websockets 
+pyaudio 
+SpeechRecognition
