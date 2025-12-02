@@ -37,12 +37,10 @@ const SignUp: React.FC<SignUpProps> = ({ onSwitchToSignIn, onAuthSuccess }) => {
         email,
         password,
       });
-
       // Extract token and username
       const { access_token, username: loggedInUser } = loginResponse.data;
-
       // 3. Pass both to the parent handler
-      [cite_start]; // This ensures the AuthContext gets the token to persist the session [cite: 334, 335, 336]
+      // This ensures the AuthContext gets the token to persist the session
       onAuthSuccess(loggedInUser, access_token);
     } catch (err: any) {
       console.error("Registration/Login error:", err);
