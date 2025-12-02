@@ -227,6 +227,7 @@ Backend/chroma_store
 test.ipynb
 .gitignore
 test.json
+testing
 
 #db files
 .sqlite3
