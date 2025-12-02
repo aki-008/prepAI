@@ -11,3 +11,12 @@ chromadb
 pydantic[email]
 sentence-transformers
 openai
+asyncpg
+passlib
+python-jose[cryptography]    
+python-multipart
+pymupdf
+llama-index-core 
+llama-index-readers-file 
+llama-index-llms-ollama 
+llama-index-embeddings-huggingface
