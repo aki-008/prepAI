@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, quiz, notes, vapi_ai  # Add vapi import
+from app.api.v1.endpoints import auth, quiz, notes, interview
 
 api_router = APIRouter()
 
@@ -24,9 +24,8 @@ api_router.include_router(
     tags=["notes"]
 )
 
-# Add Vapi routes
 api_router.include_router(
-    vapi_ai.router,
-    prefix="/vapi",
-    tags=["Voice Interview"]
+    interview.router,
+    prefix="/interview",
+    tags=["Interview"]
 )
