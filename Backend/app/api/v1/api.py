@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, quiz, notes
+from app.api.v1.endpoints import auth, quiz, notes, interview
 
 api_router = APIRouter()
 
@@ -22,4 +22,10 @@ api_router.include_router(
     notes.router,
     prefix="/notes",
     tags=["notes"]
+)
+
+api_router.include_router(
+    interview.router,
+    prefix="/interview",
+    tags=["Interview"]
 )
