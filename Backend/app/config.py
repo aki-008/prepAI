@@ -18,6 +18,9 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY:str
 
+    VAPI_ASSISTANT_ID: str
+    VAPI_PRIVATE_KEY: str
+
     class Config:
         env_file = ".env"
         extra = "ignore"  # quiz

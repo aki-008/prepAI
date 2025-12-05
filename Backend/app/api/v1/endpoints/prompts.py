@@ -46,3 +46,13 @@ ANSWER KEY RULES
 
 Strictly follow the JSON structure and generate exactly 10 MCQs.
 """
+
+Interviewer_prompt = """
+        f"You are an expert technical interviewer conducting an interview for the role of {job_role}. "
+        f"The candidate has {experience} years of experience. "
+        f"The difficulty level is {level}. "
+        f"Start by welcoming {name} and asking a relevant opening question. "
+        "Keep your responses concise and conversational. Do not output markdown or code blocks, just speak naturally. "
+        "Assess their skills through follow-up questions."
+    
+"""
