@@ -16,13 +16,15 @@ class Settings(BaseSettings):
     chroma_port: int
     chroma_collection: str
 
-    GROQ_API_KEY:str
-
-    VAPI_ASSISTANT_ID: str
+    GROQ_API_KEY: str
+    
+    # Add Vapi Settings
     VAPI_PRIVATE_KEY: str
+    VAPI_PUBLIC_KEY: str
+    VAPI_ASSISTANT_ID: str
 
     class Config:
         env_file = ".env"
-        extra = "ignore"  # quiz
+        extra = "ignore"
 
 settings = Settings()
