@@ -9,7 +9,7 @@ import uuid
 from fastapi.responses import StreamingResponse
 from chromadb.api.models.Collection import Collection 
 from pathlib import Path
-from llama_index.readers.file import PyMuPDFReader
+from llama_index.readers.file.pymu_pdf import PyMuPDFReader
 from llama_index.core.node_parser import SentenceSplitter
 from typing import Annotated
 import shutil
