@@ -26,22 +26,13 @@ except Exception as e:
     print(f"Vapi SDK Initialization Error: {e}")
     print("Ensure VAPI_PRIVATE_KEY is set in .env")
 
-# --- CORS SETUP ---
-# app.add_middleware(
-#     CORSMiddleware,
-#     # Allow communication from the frontend running on localhost:5173 
-#     # and also allow the ngrok base URL for safety.
-#     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", SERVER_URL],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 
 # --- SCHEMAS ---
 class ConfigRequest(BaseModel):
     name: str
     job_role: str
     experience: str
+    level: str = "Medium"
 
 # --- ENDPOINTS ---
 
@@ -58,19 +49,17 @@ async def get_vapi_config(data: ConfigRequest):
 
     try:
         print(f"\n--- New Interview Request ---")
-        print(f"👤 User: {data.name}, Role: {data.job_role}, Exp: {data.experience}")
+        print(f"👤 User: {data.name}, Role: {data.job_role}, Exp: {data.experience}, Level: {data.level}")
 
-        # 1. Construct the Dynamic System Prompt
         system_prompt = (
             f"You are a strict technical interviewer. You are interviewing {data.name} for a {data.job_role} role. "
             f"They have {data.experience} years of experience. "
+            f"The interview difficulty level is {data.level}. "
+            f"If the level is 'Hard', ask complex, multi-layered questions. "
+            f"If 'Medium', focus on standard industry concepts. "
             f"Ask short, concise questions. Wait for their answer. Do not lecture. "
-            f"Start by asking them to introduce themselves and briefly describe their experience."
+            f"Start by asking them to introduce themselves."
         )
-
-        # 2. Dynamic Webhook URL (for this call only)
-        # Vapi will send webhooks to the public URL defined in SERVER_URL, 
-        # specifically hitting this backend's /api/webhook route.
         webhook_url = f"{SERVER_URL}/api/webhook"
         
         # 3. Construct the Overrides Payload
