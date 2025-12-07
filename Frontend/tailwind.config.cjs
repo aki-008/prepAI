@@ -6,25 +6,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        maya: {
-          dark: "#696FC7",    // Sidebar purple
-          light: "#A7AAE1",   // Light purple buttons/accents
-          beige: "#F5D3C4",   // Background accent
-          pink: "#F2AEBB",    // Background accent
-          grid: "#cfd1e6",    // Grid line color
+        // Defined based on your specific request
+        palette: {
+          primary: "#434E78",     // Main Sidebar & Page Background
+          secondary: "#607B8F",   // Buttons & Cards & Controls Box
+          highlight: "#F7E396",   // Active states, Start Button, Glow
+          accent: "#E97F4A",      // Hover states
         }
       },
-      backgroundImage: {
-        // Creates the "Graph Paper" sketchy look
-        'sketchy-grid': `
-          linear-gradient(to right, #cfd1e6 1px, transparent 1px),
-          linear-gradient(to bottom, #cfd1e6 1px, transparent 1px)
-        `,
-      },
-      backgroundSize: {
-        'sketchy': '24px 24px',
-      },
-      // Added Font Family for the Sketchy Look
+      // Keeping your existing animations
       fontFamily: {
         handwriting: ['"Patrick Hand"', 'cursive'],
         sans: ['"Open Sans"', 'sans-serif'],
@@ -32,7 +22,7 @@ module.exports = {
       animation: {
         spotlight: "spotlight 2s ease .75s 1 forwards",
         'orb-float': "float 6s ease-in-out infinite",
-        'orb-breathe': "breathe 4s ease-in-out infinite",
+        'orb-pulse-glow': "pulse-glow 2s infinite",
       },
       keyframes: {
         spotlight: {
@@ -43,9 +33,9 @@ module.exports = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
-        breathe: {
-          "0%, 100%": { transform: "scale(1)" },
-          "50%": { transform: "scale(1.05)" },
+        "pulse-glow": {
+          "0%, 100%": { boxShadow: "0 0 20px #F7E396", transform: "scale(1)" },
+          "50%": { boxShadow: "0 0 50px #F7E396", transform: "scale(1.05)" },
         }
       },
     },

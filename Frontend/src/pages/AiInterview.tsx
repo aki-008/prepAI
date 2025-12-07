@@ -1,41 +1,55 @@
 import React, { useEffect, useState } from "react";
 import Vapi from "@vapi-ai/web";
-import { Mic, PhoneOff, Send, Loader2, Volume2 } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  PhoneOff,
+  Send,
+  Loader2,
+  Volume2,
+  ChevronDown,
+} from "lucide-react";
+// Import useAuth to get dynamic username
+import { useAuth } from "../components/context/AuthContext";
 
 // --- CONFIG ---
-const VAPI_PUBLIC_KEY = "6e393730-74a2-4690-8cb7-845ed3880488"; // Replace with yours
+const VAPI_PUBLIC_KEY = "6e393730-74a2-4690-8cb7-845ed3880488";
 const BACKEND_URL = "http://localhost:8000";
 
 const vapi = new Vapi(VAPI_PUBLIC_KEY);
 
 function AIInterview() {
-  // View State
+  const { username } = useAuth();
   const [viewState, setViewState] = useState<"config" | "interview">("config");
-
-  // Vapi State
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [status, setStatus] = useState("Idle");
 
   // Form State
-  const [name, setName] = useState("Prakhar"); // Default from screenshot
+  const [name, setName] = useState(username || "Candidate");
   const [role, setRole] = useState("Senior Frontend Developer");
   const [exp, setExp] = useState("5");
+  // UPDATED: Default difficulty
   const [difficulty, setDifficulty] = useState("Medium (Intermediate)");
 
   useEffect(() => {
-    // Vapi Event Listeners
+    if (username) setName(username);
+  }, [username]);
+
+  useEffect(() => {
     vapi.on("call-start", () => {
       setStatus("Connected");
       setIsSessionActive(true);
-      setViewState("interview"); // Switch to bubble view
+      setViewState("interview");
+      setIsMuted(false);
     });
 
     vapi.on("call-end", () => {
       setStatus("Call Ended");
       setIsSessionActive(false);
       setIsSpeaking(false);
-      setViewState("config"); // Go back to config
+      setViewState("config");
     });
 
     vapi.on("speech-start", () => setIsSpeaking(true));
@@ -87,149 +101,157 @@ function AIInterview() {
     vapi.stop();
   };
 
+  const toggleMute = () => {
+    const newMuteState = !isMuted;
+    vapi.setMuted(newMuteState);
+    setIsMuted(newMuteState);
+  };
+
   // --- RENDER ---
   return (
-    <div className="min-h-screen w-full font-sans text-gray-800 relative bg-white">
-      {/* 1. SKETCHY GRID BACKGROUND */}
-      <div className="absolute inset-0 z-0 bg-sketchy-grid bg-sketchy opacity-40 pointer-events-none"></div>
+    <div className="h-screen w-full font-sans text-white relative bg-[#434E78] overflow-hidden flex items-center justify-center">
+      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#F7E396] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#607B8F] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
 
-      {/* 2. COLOR BLOBS (Palette: #F5D3C4, #F2AEBB) */}
-      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-maya-pink rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-maya-beige rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-
-      {/* MAIN CONTENT AREA */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
-        {/* --- VIEW 1: CONFIG CARD (The "Maya" UI) --- */}
+      <div className="relative z-10 w-full max-w-4xl p-6 flex flex-col items-center">
         {viewState === "config" && (
-          <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200 p-8 md:p-12 transition-all transform hover:scale-[1.005]">
+          <div className="w-full max-w-2xl bg-[#607B8F] rounded-xl shadow-2xl border border-white/10 p-8 md:p-12 transition-all transform animate-fade-in-up">
             <div className="mb-8 text-center">
-              <h1 className="text-4xl font-bold text-gray-800 mb-2 font-handwriting">
-                Maya
+              <h1 className="text-5xl font-bold text-white mb-2 font-handwriting drop-shadow-md">
+                Prep AI
               </h1>
-              <div className="flex items-center justify-center gap-2 text-maya-dark">
-                <BrainIcon />
-                <span className="font-semibold">Configure Your Interview</span>
+              <div className="flex items-center justify-center gap-2 text-[#F7E396]">
+                <Volume2 className="w-6 h-6" />
+                <span className="font-semibold tracking-wide">
+                  Configure Your Interview
+                </span>
               </div>
             </div>
 
             <div className="space-y-6">
-              {/* Input 1: Role */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label className="block text-sm font-bold text-[#F7E396] mb-2 tracking-wide">
+                  Candidate Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full p-4 rounded-lg bg-[#434E78]/50 border-2 border-transparent focus:border-[#F7E396] focus:ring-0 outline-none transition text-white font-medium placeholder-gray-300 shadow-inner"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-[#F7E396] mb-2 tracking-wide">
                   1. Job Role/Position
                 </label>
                 <input
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full p-4 rounded-lg border-2 border-gray-200 focus:border-maya-light focus:ring-0 outline-none transition bg-gray-50 text-gray-700 font-medium placeholder-gray-400"
-                  placeholder="e.g. Senior Frontend Developer"
+                  className="w-full p-4 rounded-lg bg-[#434E78]/50 border-2 border-transparent focus:border-[#F7E396] focus:ring-0 outline-none transition text-white font-medium placeholder-gray-300 shadow-inner"
                 />
               </div>
 
-              {/* Input 2: Experience */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label className="block text-sm font-bold text-[#F7E396] mb-2 tracking-wide">
                   2. Years of Professional Experience
                 </label>
                 <input
-                  type="text" // using text to match wireframe style, backend handles parsing
+                  type="text"
                   value={exp}
                   onChange={(e) => setExp(e.target.value)}
-                  className="w-full p-4 rounded-lg border-2 border-gray-200 focus:border-maya-light focus:ring-0 outline-none transition bg-gray-50 text-gray-700 font-medium placeholder-gray-400"
-                  placeholder="e.g. 5"
+                  className="w-full p-4 rounded-lg bg-[#434E78]/50 border-2 border-transparent focus:border-[#F7E396] focus:ring-0 outline-none transition text-white font-medium placeholder-gray-300 shadow-inner"
                 />
               </div>
 
-              {/* Input 3: Difficulty */}
+              {/* UPDATED: Difficulty Selection Dropdown */}
               <div>
-                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                <label className="block text-sm font-bold text-[#F7E396] mb-2 tracking-wide">
                   3. Difficulty Level
                 </label>
-                <input
-                  type="text"
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="w-full p-4 rounded-lg border-2 border-gray-200 focus:border-maya-light focus:ring-0 outline-none transition bg-gray-50 text-gray-700 font-medium placeholder-gray-400"
-                  placeholder="Medium (Intermediate)"
-                />
+                <div className="relative">
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="w-full p-4 rounded-lg bg-[#434E78]/50 border-2 border-transparent focus:border-[#F7E396] focus:ring-0 outline-none transition text-white font-medium shadow-inner appearance-none cursor-pointer"
+                  >
+                    <option value="Easy (Beginner)">Easy (Beginner)</option>
+                    <option value="Medium (Intermediate)">
+                      Medium (Intermediate)
+                    </option>
+                    <option value="Hard (Advanced)">Hard (Advanced)</option>
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-white pointer-events-none w-5 h-5" />
+                </div>
               </div>
 
-              {/* Action Button */}
               <button
                 onClick={startInterview}
                 disabled={
                   status === "Configuring..." || status === "Connecting..."
                 }
-                className="mt-4 px-8 py-4 bg-white border-2 border-gray-800 text-gray-800 font-bold rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-3 active:bg-gray-50"
+                className="mt-6 px-8 py-4 bg-[#F7E396] text-[#434E78] font-bold text-lg rounded-lg shadow-lg hover:bg-[#E97F4A] hover:text-white transition-all duration-300 transform hover:-translate-y-1 flex items-center gap-3 w-full justify-center"
               >
                 {status === "Configuring..." || status === "Connecting..." ? (
-                  <Loader2 className="animate-spin w-5 h-5" />
+                  <Loader2 className="animate-spin w-6 h-6" />
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <Send className="w-6 h-6" />
                 )}
                 <span>Start Interview</span>
               </button>
             </div>
-
-            {/* Decorative Color Codes (from wireframe) */}
-            <div className="absolute bottom-4 right-6 flex flex-col items-end text-xs text-gray-400 font-mono">
-              <span>#A7AAE1</span>
-              <span>#F5D3C4</span>
-            </div>
           </div>
         )}
 
-        {/* --- VIEW 2: INTERVIEW BUBBLE UI (Active Call) --- */}
         {viewState === "interview" && (
           <div className="flex flex-col items-center justify-center w-full h-full animate-fade-in-up">
-            {/* The Visualizer Orb */}
-            <div className="relative mb-12">
-              {/* Orb Style: Light Blue/White Swirling 
-                 We use CSS gradients + shadowing + pulsing animation
-               */}
+            <div className="relative mb-16">
               <div
                 className={`
-                    w-48 h-48 rounded-full 
-                    bg-gradient-radial from-white via-blue-100 to-blue-300
-                    shadow-[0_0_60px_rgba(167,170,225,0.6)]
+                    w-56 h-56 rounded-full 
+                    bg-[#607B8F]
+                    shadow-[0_0_40px_#F7E396]
                     transition-all duration-300 ease-in-out
                     flex items-center justify-center
-                    border border-white/50
+                    border-4 border-white/20
                     ${
                       isSpeaking
-                        ? "scale-110 animate-pulse shadow-[0_0_80px_rgba(105,111,199,0.8)]"
-                        : "scale-100 animate-orb-float"
+                        ? "animate-pulse scale-110 shadow-[0_0_60px_#F7E396]"
+                        : "animate-bounce"
                     }
                  `}
               >
-                {/* Inner shine for "liquid" look */}
-                <div className="absolute top-4 left-6 w-12 h-6 bg-white opacity-60 rounded-full blur-md transform -rotate-45"></div>
-
                 {isSpeaking ? (
-                  <Volume2 className="text-maya-dark w-12 h-12 opacity-50" />
+                  <Volume2 className="text-white w-20 h-20 opacity-90 drop-shadow-md" />
                 ) : (
-                  <div className="w-3 h-3 bg-maya-dark rounded-full opacity-30"></div>
+                  <div className="w-4 h-4 bg-white rounded-full opacity-50 shadow-[0_0_10px_white]"></div>
                 )}
               </div>
             </div>
 
-            {/* Status Text */}
-            <h2 className="text-2xl font-bold text-gray-700 mb-8 font-handwriting">
-              {isSpeaking ? "Maya is speaking..." : "Listening to you..."}
+            <h2 className="text-3xl font-bold text-white mb-10 font-handwriting tracking-wider drop-shadow-md">
+              {isSpeaking ? "Prep AI is speaking..." : "Listening to you..."}
             </h2>
 
-            {/* Controls */}
-            <div className="flex gap-6">
-              <button className="flex items-center gap-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition font-medium shadow-sm">
-                <Mic size={18} /> Mute
+            <div className="bg-[#607B8F] p-4 rounded-2xl shadow-xl border border-white/10 flex gap-6">
+              <button
+                onClick={toggleMute}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition font-bold shadow-md ${
+                  isMuted
+                    ? "bg-[#E97F4A] text-white hover:bg-orange-600"
+                    : "bg-white/10 text-white hover:bg-white/20 border border-white/20"
+                }`}
+              >
+                {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+                {isMuted ? "Unmute" : "Mute"}
               </button>
 
               <button
                 onClick={stopInterview}
-                className="flex items-center gap-2 px-6 py-3 bg-red-100 hover:bg-red-200 text-red-600 rounded-full transition font-medium shadow-sm"
+                className="flex items-center gap-2 px-6 py-3 bg-red-500 hover:bg-red-600 text-white border border-transparent rounded-xl transition font-bold shadow-md"
               >
-                <PhoneOff size={18} /> End call
+                <PhoneOff size={20} /> End Call
               </button>
             </div>
           </div>
@@ -238,22 +260,5 @@ function AIInterview() {
     </div>
   );
 }
-
-// Simple Icon Component
-const BrainIcon = () => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
-    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
-  </svg>
-);
 
 export default AIInterview;
