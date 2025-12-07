@@ -1,5 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
+import {
+  ChevronRight,
+  CheckCircle,
+  ArrowLeft,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 
 // 1. Define the structure of the incoming API data
 interface BackendQuestion {
@@ -13,7 +19,6 @@ interface BackendQuestion {
 interface MCQQuizPageProps {
   onBack: () => void;
   totalTimeSeconds?: number;
-  // 2. Add the data prop
   data?: {
     quiz: BackendQuestion[];
   } | null;
@@ -25,9 +30,8 @@ interface QuestionItem {
   id: number;
   question: string;
   options: string[];
-  answer: string; // We will convert this to the actual option text
-  explanation?: string; // Add explanation field
-  // runtime fields
+  answer: string;
+  explanation?: string;
   selected?: string | null;
   status?: QStatus;
 }
@@ -50,33 +54,29 @@ const formatTime = (seconds: number) => {
 const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
   onBack,
   totalTimeSeconds = 15 * 60,
-  data, // Receive data
+  data,
 }) => {
-  // 3. Initialize state with Real Data if available, else Mock
+  // 3. Initialize state
   const [questions, setQuestions] = useState<QuestionItem[]>(() => {
     if (data && data.quiz && data.quiz.length > 0) {
       return data.quiz.map((q, idx) => ({
         id: idx + 1,
         question: q.question,
         options: q.options,
-        // Convert "a" -> "Option Text"
         answer: mapBackendAnswerToText(q.answer, q.options),
         explanation: q.explanation,
         selected: null,
         status: idx === 0 ? "visited" : "notVisited",
       }));
     }
-    // Fallback if no data
     return [];
   });
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isAnswered, setIsAnswered] = useState(false);
   const [showScore, setShowScore] = useState(false);
   const [timeLeft, setTimeLeft] = useState(totalTimeSeconds);
 
   const totalQuestions = questions.length;
-  // Safety check if data is empty
   const currentQuestion = questions[currentIndex] || {
     id: 0,
     question: "Loading...",
@@ -84,10 +84,6 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
     answer: "",
     status: "notVisited",
   };
-
-  useEffect(() => {
-    setIsAnswered(Boolean(currentQuestion?.selected));
-  }, [currentQuestion]);
 
   // Timer
   useEffect(() => {
@@ -100,36 +96,41 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
     return () => clearInterval(t);
   }, [timeLeft, showScore]);
 
+  // Handle Selection (Just select, don't validate yet)
   const handleAnswerClick = useCallback(
     (option: string) => {
       setQuestions((prev) =>
         prev.map((q, idx) =>
           idx === currentIndex
-            ? { ...q, selected: option, status: "answered" }
+            ? { ...q, selected: option, status: "answered" } // Mark as answered locally
             : q
         )
       );
-      setIsAnswered(true);
     },
     [currentIndex]
   );
 
-  const goToQuestion = useCallback((index: number) => {
-    setQuestions((prev) =>
-      prev.map((q, idx) => {
-        if (idx === index) {
-          return {
-            ...q,
-            status: q.status === "notVisited" ? "visited" : q.status,
-          };
-        }
-        return q;
-      })
-    );
-    setCurrentIndex(index);
-  }, []);
+  const goToQuestion = useCallback(
+    (index: number) => {
+      setQuestions((prev) =>
+        prev.map((q, idx) => {
+          // If leaving a question that wasn't answered and wasn't marked for review, mark as visited (red)
+          if (idx === currentIndex) {
+            // Keep existing status if answered or marked
+            if (q.status === "answered" || q.status === "markedForReview")
+              return q;
+            return { ...q, status: "visited" };
+          }
+          return q;
+        })
+      );
+      setCurrentIndex(index);
+    },
+    [currentIndex]
+  ); // Added currentIndex dependency
 
   const handleSaveAndNext = useCallback(() => {
+    // Logic handled in goToQuestion essentially, but we ensure status update
     setQuestions((prev) =>
       prev.map((q, idx) => {
         if (idx === currentIndex) {
@@ -151,9 +152,10 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
     if (next < totalQuestions) {
       goToQuestion(next);
     } else {
+      // Last question
       handleSubmit();
     }
-  }, [currentIndex, goToQuestion, totalQuestions]);
+  }, [currentIndex, goToQuestion, totalQuestions]); // Added dependencies
 
   const handleMarkForReview = useCallback(() => {
     setQuestions((prev) =>
@@ -171,7 +173,6 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
         idx === currentIndex ? { ...q, selected: null, status: "visited" } : q
       )
     );
-    setIsAnswered(false);
   }, [currentIndex]);
 
   const computeScore = useCallback(() => {
@@ -190,19 +191,33 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
     setShowScore(true);
   }, []);
 
+  // Palette Status Colors
   const statusClassForPalette = (q: QuestionItem, idx: number) => {
-    if (idx === currentIndex)
-      return "bg-blue-500 text-white ring-2 ring-blue-300";
+    const isActive = idx === currentIndex;
+    const baseClass =
+      "w-full aspect-square rounded-md flex items-center justify-center font-bold text-sm transition-all border-2";
+
+    // Active Border Highlight (Yellow)
+    const borderClass = isActive
+      ? "border-[#F7E396] shadow-[0_0_10px_#F7E396]"
+      : "border-transparent";
+
+    let bgClass = "";
     switch (q.status) {
       case "answered":
-        return "bg-green-500 text-white";
+        bgClass = "bg-green-500 text-white";
+        break;
       case "markedForReview":
-        return "bg-yellow-400 text-black";
+        bgClass = "bg-yellow-400 text-[#434E78]";
+        break;
       case "visited":
-        return "bg-red-500 text-white";
+        bgClass = "bg-red-500 text-white"; // Visited but skipped
+        break;
       default:
-        return "bg-slate-300 text-slate-700";
+        bgClass = "bg-[#434E78]/50 text-gray-400"; // Not visited
     }
+
+    return `${baseClass} ${bgClass} ${borderClass}`;
   };
 
   const score = useMemo(() => computeScore(), [questions, computeScore]);
@@ -210,24 +225,38 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
   // --- RENDER SCORE ---
   if (showScore) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-3xl p-8 bg-white rounded-xl shadow-lg text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-3xl font-bold mb-2">Test Complete</h2>
-          <p className="text-gray-600 mb-6">Your results are below.</p>
+      <div className="min-h-screen bg-[#434E78] flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Background Blobs */}
+        <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#F7E396] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob pointer-events-none"></div>
+        <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#607B8F] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob animation-delay-2000 pointer-events-none"></div>
 
-          <div className="text-center mb-6">
-            <div className="text-xl text-gray-500">Score</div>
-            <div className="text-5xl font-extrabold text-blue-600">{score}</div>
-            <div className="text-sm text-gray-500">out of {totalQuestions}</div>
+        <div className="w-full max-w-2xl p-10 bg-[#607B8F] rounded-2xl shadow-2xl text-center border border-white/10 relative z-10">
+          <CheckCircle className="w-20 h-20 text-[#F7E396] mx-auto mb-6" />
+          <h2 className="text-4xl font-bold mb-2 text-white font-handwriting">
+            Test Complete
+          </h2>
+          <p className="text-gray-200 mb-8">
+            You have successfully submitted the quiz.
+          </p>
+
+          <div className="text-center mb-10 p-6 bg-[#434E78]/50 rounded-xl border border-white/10">
+            <div className="text-sm text-gray-300 uppercase tracking-widest mb-2">
+              Your Score
+            </div>
+            <div className="text-6xl font-extrabold text-[#F7E396] drop-shadow-md">
+              {score}
+            </div>
+            <div className="text-lg text-gray-300 mt-2">
+              out of {totalQuestions}
+            </div>
           </div>
 
           <div className="flex justify-center gap-3">
             <button
               onClick={onBack}
-              className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50"
+              className="px-8 py-4 rounded-xl bg-[#F7E396] text-[#434E78] font-bold hover:bg-[#E97F4A] hover:text-white transition shadow-lg flex items-center gap-2"
             >
-              ← Back to Generator
+              <ArrowLeft className="w-5 h-5" /> Back to Generator
             </button>
           </div>
         </div>
@@ -235,12 +264,14 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
     );
   }
 
-  // Handle Loading/Empty State
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">
+      <div className="min-h-screen flex items-center justify-center bg-[#434E78] text-gray-300">
         No questions available. Please try generating again.
-        <button onClick={onBack} className="ml-4 text-blue-500 underline">
+        <button
+          onClick={onBack}
+          className="ml-4 text-[#F7E396] underline hover:text-[#E97F4A]"
+        >
           Go Back
         </button>
       </div>
@@ -249,154 +280,167 @@ const MCQQuizPage: React.FC<MCQQuizPageProps> = ({
 
   // --- MAIN QUIZ UI ---
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-12">
-      <div className="max-w-7xl mx-auto grid grid-cols-12 gap-6">
-        {/* Left: Main Question area */}
-        <div className="col-span-12 lg:col-span-8">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <button
-                onClick={onBack}
-                className="flex items-center text-blue-600 hover:text-blue-500"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Generator
-              </button>
-              <h1 className="text-2xl lg:text-3xl font-bold mt-3">
-                Generated MCQ Quiz
-              </h1>
-            </div>
+    <div className="min-h-screen bg-[#434E78] text-white p-4 lg:p-8 font-sans relative overflow-hidden">
+      {/* Background Blobs */}
+      <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#F7E396] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#607B8F] rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-blob animation-delay-2000 pointer-events-none"></div>
 
-            <div className="hidden md:flex flex-col items-end text-sm text-gray-600">
-              <div className="text-xl font-bold text-blue-600">
-                {currentIndex + 1} / {totalQuestions}
-              </div>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 h-full">
+        {/* Left: Main Question area */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col">
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="flex items-center text-gray-300 hover:text-[#F7E396] transition"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Exit Quiz
+            </button>
+            <div className="hidden md:block text-[#F7E396] font-bold text-lg bg-[#607B8F] px-4 py-1 rounded-full border border-white/10 shadow-sm">
+              Question {currentIndex + 1} / {totalQuestions}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-6 mb-6 border border-slate-200">
-            <div className="mb-6">
-              <h2 className="text-xl lg:text-2xl font-semibold text-slate-800">
+          <div className="bg-[#607B8F] rounded-2xl shadow-xl p-8 mb-6 border border-white/10 flex-1 flex flex-col">
+            <div className="mb-8">
+              <h2 className="text-xl lg:text-2xl font-bold text-white leading-relaxed">
                 {currentQuestion.question}
               </h2>
             </div>
 
-            <div className="grid gap-4">
+            <div className="grid gap-4 flex-1 content-start">
               {currentQuestion.options.map((opt, i) => {
                 const isSelected = currentQuestion.selected === opt;
-                // Determine styling logic
-                let optionClass =
-                  "bg-white hover:bg-slate-50 border border-slate-200 text-slate-800";
 
-                if (isAnswered) {
-                  if (opt === currentQuestion.answer) {
-                    optionClass =
-                      "bg-green-600/80 text-white border-green-500 shadow";
-                  } else if (isSelected) {
-                    optionClass =
-                      "bg-red-600/80 text-white border-red-500 shadow";
-                  } else {
-                    optionClass =
-                      "bg-slate-50 border-slate-200 text-slate-700 opacity-70";
-                  }
-                } else if (isSelected) {
-                  optionClass = "bg-blue-600/80 text-white";
+                // Styling: Only show selection state, NOT correctness
+                let optionClass =
+                  "bg-[#434E78]/40 border border-white/10 text-gray-200 hover:bg-[#434E78]/60";
+
+                if (isSelected) {
+                  // Active selection styling
+                  optionClass =
+                    "bg-[#F7E396] text-[#434E78] border-[#F7E396] font-bold shadow-md transform scale-[1.01]";
                 }
 
                 return (
                   <button
                     key={i}
                     onClick={() => handleAnswerClick(opt)}
-                    disabled={isAnswered}
-                    className={`p-4 rounded-lg text-left border transition flex justify-between items-center ${optionClass}`}
+                    className={`p-5 rounded-xl text-left transition-all duration-200 flex justify-between items-center group ${optionClass}`}
                   >
-                    <span>{opt}</span>
-                    {isAnswered && opt === currentQuestion.answer && (
-                      <CheckCircle className="w-5 h-5 text-green-100" />
-                    )}
-                    {isAnswered &&
-                      isSelected &&
-                      opt !== currentQuestion.answer && (
-                        <XCircle className="w-5 h-5 text-red-200" />
+                    <span className="text-lg">{opt}</span>
+                    {/* Circle Indicator */}
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                        ${
+                          isSelected
+                            ? "border-[#434E78]"
+                            : "border-gray-400 group-hover:border-[#F7E396]"
+                        }
+                    `}
+                    >
+                      {isSelected && (
+                        <div className="w-3 h-3 rounded-full bg-[#434E78]"></div>
                       )}
+                    </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Explanation Section (Only visible after answering) */}
-            {isAnswered && currentQuestion.explanation && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg text-blue-800 text-sm">
-                <strong>Explanation:</strong> {currentQuestion.explanation}
-              </div>
-            )}
-
             {/* Bottom actions */}
-            <div className="mt-6 flex flex-col md:flex-row gap-3 md:gap-4 items-center justify-between">
-              <div className="flex gap-2 flex-wrap">
+            <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="flex gap-3 w-full md:w-auto">
                 <button
                   onClick={handleMarkForReview}
-                  className="px-4 py-2 rounded-md bg-yellow-400 text-black font-medium"
+                  className="flex-1 md:flex-none px-6 py-3 rounded-lg bg-yellow-400 text-[#434E78] font-bold hover:bg-yellow-300 transition shadow-md"
                 >
                   Mark for Review
                 </button>
                 <button
                   onClick={handleClearResponse}
-                  disabled={isAnswered}
-                  className="px-4 py-2 rounded-md border border-slate-300 text-slate-700 bg-white disabled:opacity-50"
+                  disabled={!currentQuestion.selected}
+                  className="flex-1 md:flex-none px-6 py-3 rounded-lg border border-gray-400 text-gray-300 hover:bg-white/10 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
                 >
-                  Clear Response
-                </button>
-                <button
-                  onClick={handleSaveAndNext}
-                  className="px-4 py-2 rounded-md bg-gradient-to-r from-blue-500 to-blue-700 text-white font-medium flex items-center gap-2"
-                >
-                  Save & Next <ChevronRight className="w-4 h-4" />
+                  Clear Selection
                 </button>
               </div>
+
+              <button
+                onClick={handleSaveAndNext}
+                className="w-full md:w-auto px-8 py-3 rounded-lg bg-[#F7E396] text-[#434E78] font-bold hover:bg-[#E97F4A] hover:text-white transition shadow-lg flex items-center justify-center gap-2"
+              >
+                {currentIndex === totalQuestions - 1
+                  ? "Submit Quiz"
+                  : "Save & Next"}
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
 
         {/* Right: Sidebar */}
         <aside className="col-span-12 lg:col-span-4">
-          <div className="sticky top-6 space-y-4">
-            {/* Timer */}
-            <div className="bg-white rounded-xl p-4 shadow border border-slate-200 text-center">
-              <div className="text-sm text-gray-500">Time Left</div>
-              <div className="mt-2 text-3xl font-bold text-red-600">
-                {formatTime(Math.max(0, timeLeft))}
+          <div className="sticky top-6 space-y-6">
+            {/* Timer Card */}
+            <div className="bg-[#607B8F] rounded-2xl p-6 shadow-xl border border-white/10 text-center relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-center justify-center gap-2 text-gray-300 mb-2">
+                  <Clock className="w-4 h-4" /> Time Remaining
+                </div>
+                <div className="text-5xl font-mono font-bold text-[#F7E396] tracking-wider">
+                  {formatTime(Math.max(0, timeLeft))}
+                </div>
               </div>
             </div>
 
-            {/* Palette */}
-            <div className="bg-white rounded-xl p-4 shadow border border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold">Question Palette</h3>
-              </div>
-              <div className="grid grid-cols-5 gap-2">
+            {/* Palette Card */}
+            <div className="bg-[#607B8F] rounded-2xl p-6 shadow-xl border border-white/10">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-white/10 pb-3">
+                Question Palette
+              </h3>
+
+              <div className="grid grid-cols-5 gap-3">
                 {questions.map((q, idx) => (
                   <button
                     key={q.id}
                     onClick={() => goToQuestion(idx)}
-                    className={`w-full aspect-square rounded-md flex items-center justify-center font-medium ${statusClassForPalette(
-                      q,
-                      idx
-                    )}`}
+                    className={statusClassForPalette(q, idx)}
                   >
                     {idx + 1}
                   </button>
                 ))}
               </div>
+
+              {/* Legend */}
+              <div className="mt-6 grid grid-cols-2 gap-y-3 gap-x-2 text-xs text-gray-300">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-sm"></div>{" "}
+                  Answered
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-sm"></div> Skipped
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-sm"></div>{" "}
+                  Review
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-[#434E78]/50 rounded-sm border border-gray-500"></div>{" "}
+                  Not Visited
+                </div>
+              </div>
             </div>
 
+            {/* Submit Button */}
             <button
               onClick={() => {
-                if (window.confirm("Submit test now?")) handleSubmit();
+                if (window.confirm("Are you sure you want to submit the test?"))
+                  handleSubmit();
               }}
-              className="w-full px-4 py-2 rounded-md bg-red-600 text-white font-semibold"
+              className="w-full px-6 py-4 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition shadow-lg flex items-center justify-center gap-2"
             >
-              Submit Test
+              <AlertCircle className="w-5 h-5" /> Submit Test
             </button>
           </div>
         </aside>
