@@ -357,7 +357,7 @@ const ResumeGeneratedQuize: React.FC = () => {
                       type="range"
                       min="1"
                       max="60"
-                      step="5"
+                      step="1"
                       value={duration}
                       onChange={(e) => setDuration(parseInt(e.target.value))}
                       className="w-full h-1.5 bg-[#434E78] rounded-lg appearance-none cursor-pointer accent-[#F7E396]"
