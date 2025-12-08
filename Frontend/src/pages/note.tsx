@@ -13,6 +13,7 @@ import {
   Trash2,
   Edit2,
   Check,
+  Brain,
 } from "lucide-react";
 import {
   fetchNotes,
@@ -61,10 +62,8 @@ const Notes: React.FC = () => {
     loadNotes();
   }, []);
 
-  // --- FIX: Robust Auto-Scroll ---
+  // --- Robust Auto-Scroll ---
   const scrollToBottom = () => {
-    // "smooth" gets interrupted by rapid streaming updates.
-    // "instant" ensures it snaps to bottom every time a token arrives.
     messagesEndRef.current?.scrollIntoView({
       behavior: "instant",
       block: "end",
@@ -78,6 +77,7 @@ const Notes: React.FC = () => {
   // --- Resizing Logic ---
   const startResizing = useCallback(() => setIsResizing(true), []);
   const stopResizing = useCallback(() => setIsResizing(false), []);
+
   const resize = useCallback(
     (mouseMoveEvent: MouseEvent) => {
       if (isResizing) {
@@ -158,6 +158,7 @@ const Notes: React.FC = () => {
   const saveRename = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!editingNoteId || !editName.trim()) return;
+
     try {
       await renameNote(editingNoteId, editName);
       setNotes((prev) =>
@@ -259,18 +260,23 @@ const Notes: React.FC = () => {
   };
 
   return (
-    <div className="flex bg-black h-screen overflow-hidden">
-      {/* --- Left Sidebar --- */}
+    // 1. Root Container: #434E78 Background, No Scrollbars
+    <div className="flex h-screen w-full overflow-hidden bg-[#434E78] font-sans text-white">
+      {/* --- Left Sidebar (#607B8F) --- */}
       <div
-        className={`h-screen shrink-0 transition-all duration-300 bg-gray-900 border-r border-gray-700 flex flex-col gap-4 ${
-          isSidebarOpen ? "w-64 p-4" : "w-0 p-0 overflow-hidden"
+        className={`h-screen shrink-0 transition-all duration-300 bg-[#607B8F] border-r border-white/10 flex flex-col gap-4 ${
+          isSidebarOpen ? "w-72 p-4" : "w-0 p-0 overflow-hidden"
         }`}
       >
         {isSidebarOpen && (
           <>
-            <h3 className="text-xl font-bold text-white mb-2 border-b border-gray-700 pb-2">
-              My Notes
-            </h3>
+            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-4">
+              <FileText className="text-[#F7E396] w-6 h-6" />
+              <h3 className="text-xl font-bold text-white font-handwriting">
+                My Notes
+              </h3>
+            </div>
+
             <input
               type="file"
               ref={fileInputRef}
@@ -278,10 +284,12 @@ const Notes: React.FC = () => {
               accept="application/pdf"
               onChange={handleFileChange}
             />
+
+            {/* Upload Button: #F7E396 (Highlight) */}
             <button
               onClick={handleUploadClick}
               disabled={isUploading}
-              className="flex items-center gap-3 w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
+              className="flex items-center justify-center gap-2 w-full bg-[#F7E396] text-[#434E78] px-4 py-3 rounded-xl hover:bg-[#E97F4A] hover:text-white transition font-bold shadow-md"
             >
               {isUploading ? (
                 <Loader2 className="animate-spin" size={20} />
@@ -291,8 +299,8 @@ const Notes: React.FC = () => {
               {isUploading ? "Uploading..." : "Upload New PDF"}
             </button>
 
-            <div className="mt-4 pt-4 border-t border-gray-700 space-y-2 overflow-y-auto">
-              <p className="text-sm text-gray-400 uppercase tracking-wider">
+            <div className="mt-2 flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+              <p className="text-xs text-gray-200 uppercase tracking-widest font-semibold mb-2">
                 History
               </p>
 
@@ -300,10 +308,10 @@ const Notes: React.FC = () => {
                 <div
                   key={note.id}
                   onClick={() => handleNoteSelect(note)}
-                  className={`group relative text-gray-200 p-3 rounded-md cursor-pointer flex items-center justify-between hover:bg-gray-700 transition ${
+                  className={`group relative p-3 rounded-lg cursor-pointer flex items-center justify-between transition-all border border-transparent ${
                     currentNote?.id === note.id
-                      ? "bg-gray-800 border border-blue-500"
-                      : ""
+                      ? "bg-[#434E78] border-[#F7E396] shadow-md"
+                      : "hover:bg-[#434E78]/50 text-gray-100"
                   }`}
                 >
                   {editingNoteId === note.id ? (
@@ -313,44 +321,54 @@ const Notes: React.FC = () => {
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
-                        className="flex-1 bg-gray-900 text-white text-xs px-2 py-1 rounded border border-blue-500 outline-none"
+                        className="flex-1 bg-[#434E78] text-white text-xs px-2 py-1 rounded border border-[#F7E396] outline-none"
                         autoFocus
                       />
                       <button
                         onClick={saveRename}
-                        className="text-green-400 hover:text-green-300 p-1"
+                        className="text-green-300 hover:text-green-200 p-1"
                       >
                         <Check size={14} />
                       </button>
                       <button
                         onClick={cancelRename}
-                        className="text-red-400 hover:text-red-300 p-1"
+                        className="text-red-300 hover:text-red-200 p-1"
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 overflow-hidden">
+                      <div className="flex items-center gap-3 overflow-hidden">
                         <FileText
                           size={16}
-                          className="text-blue-400 shrink-0"
+                          className={`${
+                            currentNote?.id === note.id
+                              ? "text-[#F7E396]"
+                              : "text-gray-300"
+                          } shrink-0`}
                         />
-                        <span className="truncate text-sm">
+                        <span
+                          className={`truncate text-sm font-medium ${
+                            currentNote?.id === note.id
+                              ? "text-white"
+                              : "text-gray-200"
+                          }`}
+                        >
                           {note.filename}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => startEditing(e, note)}
-                          className="p-1.5 hover:bg-gray-600 rounded text-gray-400 hover:text-white"
+                          className="p-1.5 hover:bg-white/10 rounded text-gray-300 hover:text-[#F7E396]"
                           title="Rename"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button
                           onClick={(e) => handleDeleteNote(e, note.id)}
-                          className="p-1.5 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400"
+                          className="p-1.5 hover:bg-red-500/20 rounded text-gray-300 hover:text-red-300"
                           title="Delete"
                         >
                           <Trash2 size={14} />
@@ -365,85 +383,90 @@ const Notes: React.FC = () => {
         )}
       </div>
 
-      {/* --- Center: PDF Viewer --- */}
-      <div className="flex flex-1 overflow-hidden relative flex-col">
-        <header className="flex justify-between items-center p-4 bg-gray-900 border-b border-gray-700 shrink-0 z-10">
+      {/* --- Center: PDF Viewer (#434E78 Background) --- */}
+      <div className="flex flex-1 overflow-hidden relative flex-col bg-[#434E78]">
+        <header className="flex justify-between items-center p-4 border-b border-white/10 shrink-0 z-10 bg-[#434E78]">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white transition"
+              className="p-2 rounded-lg hover:bg-white/10 text-white transition"
             >
               <Menu size={20} />
             </button>
-            <h2 className="text-lg font-semibold text-white truncate max-w-md">
+            <h2 className="text-lg font-bold text-white truncate max-w-md">
               {currentNote ? currentNote.filename : "Select a Note"}
             </h2>
           </div>
           {!isChatOpen && currentNote && (
             <button
               onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              className="flex items-center gap-2 bg-[#F7E396] text-[#434E78] hover:bg-[#E97F4A] hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow-md"
             >
               <MessageSquare size={18} /> Open Chat
             </button>
           )}
         </header>
 
-        <div className="flex-1 w-full h-full bg-gray-800 relative">
+        <div className="flex-1 w-full h-full relative p-4">
           {pdfUrl ? (
-            <iframe
-              src={pdfUrl}
-              className={`w-full h-full border-none ${
-                isResizing ? "pointer-events-none" : ""
-              }`}
-              title="PDF Viewer"
-            />
+            <div className="w-full h-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+              <iframe
+                src={pdfUrl}
+                className={`w-full h-full border-none ${
+                  isResizing ? "pointer-events-none" : ""
+                }`}
+                title="PDF Viewer"
+              />
+            </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
-              <FileText size={64} className="mb-4 opacity-50" />
-              <p>Select a PDF from the sidebar to view</p>
+            <div className="flex flex-col items-center justify-center h-full text-gray-400/50">
+              <FileText size={80} className="mb-4 opacity-30" />
+              <p className="text-lg font-medium">
+                Select a PDF from the sidebar to view
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* --- Resizable Chat Panel --- */}
+      {/* --- Resizable Chat Panel (#607B8F) --- */}
       {isChatOpen && (
         <div
-          className="w-1.5 hover:w-2 cursor-col-resize bg-gray-800 hover:bg-blue-500 transition-all z-20 flex items-center justify-center shrink-0"
+          className="w-1 hover:w-2 cursor-col-resize bg-[#434E78] hover:bg-[#F7E396] transition-all z-20 flex items-center justify-center shrink-0"
           onMouseDown={startResizing}
         >
-          <GripVertical size={16} className="text-gray-500" />
+          <GripVertical size={16} className="text-white/30" />
         </div>
       )}
 
       <div
         style={{ width: isChatOpen ? chatWidth : 0 }}
-        className={`flex flex-col bg-gray-900 border-l border-gray-700 shrink-0 transition-all duration-100 ease-linear overflow-hidden`}
+        className={`flex flex-col bg-[#607B8F] border-l border-white/10 shrink-0 transition-all duration-100 ease-linear overflow-hidden`}
       >
         {isChatOpen && (
           <>
-            <header className="flex justify-between items-center p-4 border-b border-gray-700 bg-gray-900 shrink-0">
+            <header className="flex justify-between items-center p-4 border-b border-white/10 bg-[#607B8F] shrink-0">
               <div className="flex items-center gap-2">
-                <MessageSquare size={18} className="text-blue-500" />
-                <h3 className="text-lg font-bold text-white whitespace-nowrap">
+                <Brain size={20} className="text-[#F7E396]" />
+                <h3 className="text-lg font-bold text-white whitespace-nowrap font-handwriting">
                   AI Chat
                 </h3>
               </div>
               <button
                 onClick={() => setIsChatOpen(false)}
-                className="p-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+                className="p-2 rounded-lg text-gray-200 hover:bg-white/10 hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
               {messages.length === 0 && (
-                <div className="text-center text-gray-500 mt-10">
+                <div className="text-center text-gray-200 mt-10 opacity-70">
                   <p>Ask a question about this document...</p>
                 </div>
               )}
+
               {messages.map((msg, i) => (
                 <div
                   key={i}
@@ -452,10 +475,10 @@ const Notes: React.FC = () => {
                   }`}
                 >
                   <div
-                    className={`max-w-[85%] p-3 rounded-lg text-sm ${
+                    className={`max-w-[85%] p-4 rounded-xl text-sm shadow-sm ${
                       msg.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-700 text-gray-200 prose prose-invert prose-sm max-w-none"
+                        ? "bg-[#F7E396] text-[#434E78] font-medium rounded-tr-none"
+                        : "bg-[#434E78] text-white border border-white/10 rounded-tl-none prose prose-invert prose-sm max-w-none"
                     }`}
                   >
                     {msg.role === "assistant" ? (
@@ -470,8 +493,8 @@ const Notes: React.FC = () => {
               ))}
               {isChatLoading && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-700 p-3 rounded-lg">
-                    <Loader2 className="animate-spin w-4 h-4 text-blue-400" />
+                  <div className="bg-[#434E78] p-3 rounded-lg border border-white/10">
+                    <Loader2 className="animate-spin w-4 h-4 text-[#F7E396]" />
                   </div>
                 </div>
               )}
@@ -479,7 +502,7 @@ const Notes: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="p-4 border-t border-gray-700 shrink-0">
+            <div className="p-4 border-t border-white/10 shrink-0 bg-[#607B8F]">
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -487,13 +510,14 @@ const Notes: React.FC = () => {
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                   placeholder="Type your question..."
-                  className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-blue-500 placeholder-gray-500"
+                  // Input: Dark Blue (#434E78) for contrast on Light Blue (#607B8F) panel
+                  className="flex-1 bg-[#434E78] text-white rounded-xl px-4 py-3 border border-transparent focus:border-[#F7E396] focus:ring-0 outline-none placeholder-gray-400 shadow-inner"
                   disabled={!sessionId || isChatLoading}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={!sessionId || isChatLoading}
-                  className="bg-blue-600 p-2 rounded-lg text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="bg-[#F7E396] p-3 rounded-xl text-[#434E78] hover:bg-[#E97F4A] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md"
                 >
                   <Send size={20} />
                 </button>
