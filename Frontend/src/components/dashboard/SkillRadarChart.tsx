@@ -1,27 +1,45 @@
 import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
 } from "recharts";
 
 const SkillRadarChart = ({ data }: { data: any[] }) => (
-  <div className="bg-white p-5 shadow rounded-xl">
-    <h3 className="text-xl font-bold mb-3 text-black">Skill Strength Chart</h3>
+  // Updated: Transparent background
+  <div className="w-full h-full flex items-center justify-center">
+    <ResponsiveContainer width="100%" height="100%">
+      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
+        {/* Grid lines: lighter for dark theme */}
+        <PolarGrid stroke="#e5e7eb" strokeOpacity={0.2} />
 
-    <div className="w-full h-80">
-      <ResponsiveContainer>
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="skill" />
-          <PolarRadiusAxis angle={30} domain={[0, 100]} />
-          <Radar
-            name="Skill Level"
-            dataKey="value"
-            stroke="#1170d6"
-            fill="#1170d6"
-            fillOpacity={0.4}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
-    </div>
+        {/* Labels: White text */}
+        <PolarAngleAxis
+          dataKey="skill"
+          tick={{ fill: "#ffffff", fontSize: 12, fontWeight: 500 }}
+        />
+
+        {/* Radius Axis: Hidden or subtle */}
+        <PolarRadiusAxis
+          angle={30}
+          domain={[0, 100]}
+          tick={false}
+          axisLine={false}
+        />
+
+        {/* The Radar Shape: Highlight Yellow with opacity */}
+        <Radar
+          name="Skill Level"
+          dataKey="value"
+          stroke="#F7E396"
+          strokeWidth={2}
+          fill="#F7E396"
+          fillOpacity={0.4}
+        />
+      </RadarChart>
+    </ResponsiveContainer>
   </div>
 );
 
