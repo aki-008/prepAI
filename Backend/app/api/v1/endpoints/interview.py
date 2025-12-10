@@ -1,11 +1,13 @@
 import os
+from app.models import User
 import uvicorn
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from app.config import settings
 from vapi import Vapi
 from dotenv import load_dotenv
+from app.api.deps import get_db, get_current_user, get_chroma_collection
 
 load_dotenv()
 
@@ -37,7 +39,8 @@ class ConfigRequest(BaseModel):
 # --- ENDPOINTS ---
 
 @router.post("/api/get-vapi-config")
-async def get_vapi_config(data: ConfigRequest):
+async def get_vapi_config(data: ConfigRequest,
+    current_user: User = Depends(get_current_user)):
     """
     Endpoint called by the Frontend to get the dynamically generated Assistant configuration.
     """
@@ -149,7 +152,8 @@ async def get_vapi_config(data: ConfigRequest):
 
 
 @router.post("/api/webhook")
-async def vapi_webhook_receiver(request: Request):
+async def vapi_webhook_receiver(request: Request,
+    current_user: User = Depends(get_current_user)):
     """
     Endpoint that receives asynchronous events from Vapi's servers.
     Saves transcripts to a local file.
