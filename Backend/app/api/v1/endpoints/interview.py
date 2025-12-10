@@ -117,7 +117,7 @@ async def get_vapi_config(data: ConfigRequest):
                 "stability": 0.5
             },
 
-            "firstMessage": f"Hi {data.name}, thanks for joining. I’m the Data Science Lead. This is a quick 5-minute screening to understand your background and fit. Shall we begin?",
+            "firstMessage": f"Hi {data.name}, thanks for joining. I’m the hiring manager. This is a quick 5-minute screening to understand your background and fit. Shall we begin?",
             "maxDurationSeconds": 360, 
             "silenceTimeoutSeconds": 40, 
             "backgroundSound": "office", 
