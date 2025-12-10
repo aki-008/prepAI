@@ -39,8 +39,7 @@ class ConfigRequest(BaseModel):
 # --- ENDPOINTS ---
 
 @router.post("/api/get-vapi-config")
-async def get_vapi_config(data: ConfigRequest,
-    current_user: User = Depends(get_current_user)):
+async def get_vapi_config(data: ConfigRequest):
     """
     Endpoint called by the Frontend to get the dynamically generated Assistant configuration.
     """
@@ -60,39 +59,40 @@ async def get_vapi_config(data: ConfigRequest,
             f"The difficulty level is {data.level}. Your style is clear, concise, and professional. Do not lecture. "
             "All questions must be relevant to the provided job role.\n\n"
 
-            "You MUST strictly follow this time-boxed interview flow:\n\n"
+            "You MUST strictly follow this interview flow:\n\n"
 
-            "1. **Introduction (0:00–0:30)**: You have already welcomed them. Wait for their confirmation to begin.\n\n"
+            "1. **Introduction**: You have already welcomed them. Wait for their confirmation to begin.\n\n"
 
-            "2. **Background Snapshot (0:30–1:30)**: Ask: "
-            "'Give me a 30–40 second overview of your background and the type of work you've done related to this role.'\n\n"
+            "2. **Background Snapshot**: Ask: "
+            "'Give me a brief 30–40 second overview of your background and the type of work you've done related to this role.'\n\n"
 
-            "3. **Technical Depth (1:30–2:30)**: Ask the candidate to choose one project relevant to the job role. "
-            "Ask: 'Pick one project you're proud of that aligns with this role. In 45 seconds, explain the problem, your approach, "
-            "tools/techniques used, and the business impact.'\n\n"
+            "3. **Technical Depth**: Ask the candidate to choose one project relevant to the job role. "
+            "Ask: 'Pick one project you're proud of that aligns with this role. In under a minute, explain the problem, your approach, "
+            "tools or techniques used, and the business impact.'\n\n"
 
-            "4. **Core Skills Check (2:30–3:30)**: Inform them you will ask 3 rapid questions tailored to the job. "
+            "4. **Core Skills Check**: Inform them you will ask 3 rapid questions tailored to the job. "
             "Generate **three crisp, role-specific skill checks** following this logic:\n"
             "   - Question 1: A foundational concept essential to the role.\n"
             "   - Question 2: A practical troubleshooting or decision-making question.\n"
-            "   - Question 3: A tool/framework/technology familiarity question.\n"
+            "   - Question 3: A tool, framework, or technology familiarity question.\n"
             "Questions must be specific to the given job role.\n\n"
 
-            "5. **Practical Scenario (3:30–4:15)**: Generate **one short applied scenario** relevant to the role. "
+            "5. **Practical Scenario**: Generate **one short applied scenario** relevant to the role. "
             "Ask the candidate to describe their high-level approach to solve it.\n\n"
 
-            "6. **Role & Communication Fit (4:15–4:45)**: Ask a communication-focused question, such as: "
+            "6. **Role & Communication Fit**: Ask a communication-focused question, such as: "
             "'This role requires cross-team collaboration. Can you give an example where you explained something complex "
             "to a non-technical or differently-skilled stakeholder?'\n\n"
 
-            "7. **Wrap-Up (4:45–5:00)**: Say: 'Thank you. Any questions for me?' Then conclude: 'We’ll get back to you with next steps.'\n\n"
+            "7. **Wrap-Up**: Say: 'Thank you. Any questions for me?' Then conclude: 'We’ll get back to you with next steps.'\n\n"
 
             "**CRITICAL RULES:**\n"
-            "- Do NOT exceed the time-box for each segment.\n"
+            "- Do NOT exceed the boundaries of each segment.\n"
             "- If their answers run long, politely interrupt and move forward.\n"
             "- Keep your phrasing tight and professional.\n"
             "- All generated questions MUST be directly relevant to the specified job role."
         )
+
 
 
         webhook_url = f"{SERVER_URL}/api/webhook"
@@ -152,8 +152,7 @@ async def get_vapi_config(data: ConfigRequest,
 
 
 @router.post("/api/webhook")
-async def vapi_webhook_receiver(request: Request,
-    current_user: User = Depends(get_current_user)):
+async def vapi_webhook_receiver(request: Request):
     """
     Endpoint that receives asynchronous events from Vapi's servers.
     Saves transcripts to a local file.
