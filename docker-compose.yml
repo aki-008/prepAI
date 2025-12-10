@@ -47,8 +47,7 @@ services:
     env_file:
       - .env
     environment:
-      # Override config to point to docker service names
-      # NOTE: Ensure the DB name 'studentdb' matches POSTGRES_DB above or update accordingly in your .env
+      # Use 'studentdb' as the database name to match the 'db' service configuration
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/studentdb
       chroma_host: chromadb
       chroma_port: 8000
