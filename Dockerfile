@@ -9,19 +9,15 @@ RUN npm run build
 # --- Stage 2: Runtime ---
 FROM python:3.12-slim
 
-# Install system dependencies (Nginx, PostgreSQL, PortAudio)
+# Install system dependencies
+# Note: We keep libpq-dev for Python database libraries
 RUN apt-get update && apt-get install -y \
-    nginx postgresql postgresql-contrib postgresql-client \
+    nginx \
     build-essential portaudio19-dev libpq-dev git \
     && rm -rf /var/lib/apt/lists/*
 
-# Add PostgreSQL bin directory to PATH for non-root user (adjust version if necessary)
-ENV PATH="/usr/lib/postgresql/15/bin:$PATH"
-
 # Setup non-root user for HF Spaces (UID 1000)
 RUN useradd -m -u 1000 user
-# Create a data directory for PostgreSQL owned by the non-root user
-RUN mkdir -p /home/user/postgres_data && chown -R user:user /home/user/postgres_data
 WORKDIR /home/user/app
 
 # Copy Backend and install requirements
@@ -34,7 +30,6 @@ COPY --chown=user Backend/ ./Backend/
 COPY --chown=user --from=build-stage /app/frontend/dist /usr/share/nginx/html
 
 # Copy Configs
-# FIX: Removed citation tags and extra slashes below
 COPY --chown=user nginx.conf /etc/nginx/sites-available/default
 COPY --chown=user start.sh ./start.sh
 RUN chmod +x ./start.sh
@@ -43,7 +38,7 @@ RUN chmod +x ./start.sh
 ENV PORT=7860
 EXPOSE 7860
 
-# Set the non-root user as the default user for the container
+# Set the non-root user
 USER user
 
 # Run the startup script
