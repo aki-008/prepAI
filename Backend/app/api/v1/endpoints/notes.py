@@ -335,7 +335,6 @@ async def get_pdf_content(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Serve the raw PDF binary data for the viewer."""
     result = await db.execute(
         select(PDFData).where(PDFData.id == pdf_id, PDFData.user_id == current_user.id)
     )
@@ -344,8 +343,16 @@ async def get_pdf_content(
     if not pdf:
         raise HTTPException(status_code=404, detail="Note not found")
 
-    # Return raw bytes with PDF mime type so browser/frontend can render it
-    return Response(content=pdf.pdf_blob, media_type="application/pdf")
+    # FIX: Add 'Content-Disposition: inline' to tell browser to render it
+    headers = {
+        "Content-Disposition": f"inline; filename={pdf.filename}"
+    }
+    
+    return Response(
+        content=pdf.pdf_blob, 
+        media_type="application/pdf",
+        headers=headers
+    )
 
 
 # -------------------------

@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { getNoteContentUrl } from "../api/notesService";
 import {
   Upload,
   Menu,
@@ -186,18 +187,12 @@ const Notes: React.FC = () => {
   const handleNoteSelect = async (note: Note) => {
     if (editingNoteId === note.id) return;
     setCurrentNote(note);
-    setPdfUrl(null);
     setMessages([]);
     setSessionId(null);
     setIsChatOpen(true);
 
-    try {
-      const blob = await fetchNoteBlob(note.id);
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-    } catch (error) {
-      console.error("Failed to load PDF", error);
-    }
+    const secureUrl = getNoteContentUrl(note.id);
+    setPdfUrl(secureUrl);
 
     try {
       const existingSessions = await fetchSessions(note.id);
