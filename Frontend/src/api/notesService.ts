@@ -100,7 +100,7 @@ export const streamChatRequest = async (
 
   try {
     const response = await fetch(
-      `http://localhost:8000/api/v1/notes/chat/${sessionId}?user_prompt=${encodeURIComponent(
+      `/api/v1/notes/chat/${sessionId}?user_prompt=${encodeURIComponent(
         userMessage
       )}`,
       {

@@ -14,7 +14,7 @@ import { useAuth } from "../components/context/AuthContext";
 
 // --- CONFIG ---
 const VAPI_PUBLIC_KEY = "6e393730-74a2-4690-8cb7-845ed3880488";
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "";
 
 const vapi = new Vapi(VAPI_PUBLIC_KEY);
 
