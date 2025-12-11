@@ -3,18 +3,19 @@ set -e
 
 # --- 1. Set Environment Variables ---
 export HOME=/home/user
-# DATABASE_URL is provided by Hugging Face Secrets (Render)
+# DATABASE_URL, SECRET_KEY, VAPI_PUBLIC_KEY, and GROQ_API_KEY 
+# must be set in Hugging Face Space Secrets.
 
-# ChromaDB settings
+# ChromaDB Internal Settings
 export chroma_host="127.0.0.1"
 export chroma_port="8080"
 export chroma_collection="prepai_collection"
-
-# --- 2. Start ChromaDB (Using /tmp for permissions) ---
-echo "🎨 Setting up ChromaDB..."
-# FIX: Use /tmp because the app root is read-only for non-root users
 export CHROMA_PATH="/tmp/chroma_store"
+
+# --- 2. Start ChromaDB (Background) ---
+echo "🎨 Setting up ChromaDB..."
 mkdir -p "$CHROMA_PATH"
+# We use the internal 8080 port for ChromaDB
 chroma run --host 0.0.0.0 --port 8080 --path "$CHROMA_PATH" &
 
 # --- 3. Start Nginx (Non-root Mode) ---
@@ -56,7 +57,20 @@ EOF
 
 nginx -c /tmp/nginx.conf &
 
-# --- 4. Start Backend ---
+# --- 4. Wait for Services to be Ready ---
+# The 502 error often happens because Backend starts before ChromaDB is listening.
+echo "⏳ Waiting for ChromaDB to be responsive on port 8080..."
+# Uses the built-in 'timeout' and '/dev/tcp' to check port status
+timeout 30s bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/127.0.0.1/8080; do sleep 1; done'
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error: ChromaDB failed to start within 30 seconds."
+    exit 1
+fi
+echo "✅ ChromaDB is ready."
+
+# --- 5. Start Backend ---
 echo "🐍 Starting Backend..."
 cd Backend
+# Note: Ensure your FastAPI app listens on 127.0.0.1:8000
 python run.py
