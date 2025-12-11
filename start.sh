@@ -3,17 +3,19 @@ set -e
 
 # --- 1. Set Environment Variables ---
 export HOME=/home/user
-# Note: DATABASE_URL is automatically provided by Hugging Face Secrets (pointing to Render)
+# DATABASE_URL is provided by Hugging Face Secrets (Render)
 
 # ChromaDB settings
 export chroma_host="127.0.0.1"
 export chroma_port="8080"
 export chroma_collection="prepai_collection"
 
-# --- 2. Start ChromaDB ---
+# --- 2. Start ChromaDB (Using /tmp for permissions) ---
 echo "🎨 Setting up ChromaDB..."
-mkdir -p ./chroma_store
-chroma run --host 0.0.0.0 --port 8080 --path ./chroma_store &
+# FIX: Use /tmp because the app root is read-only for non-root users
+export CHROMA_PATH="/tmp/chroma_store"
+mkdir -p "$CHROMA_PATH"
+chroma run --host 0.0.0.0 --port 8080 --path "$CHROMA_PATH" &
 
 # --- 3. Start Nginx (Non-root Mode) ---
 echo "🌐 Starting Nginx..."
@@ -57,5 +59,4 @@ nginx -c /tmp/nginx.conf &
 # --- 4. Start Backend ---
 echo "🐍 Starting Backend..."
 cd Backend
-# The app will connect to the Render DB using the DATABASE_URL secret
 python run.py
