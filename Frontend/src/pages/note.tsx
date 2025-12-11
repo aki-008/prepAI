@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { getNoteContentUrl } from "../api/notesService";
+import SecurePdfViewer from "../components/SecurePdfViewer"; // <--- Imported new component
 import {
   Upload,
   Menu,
@@ -19,7 +20,7 @@ import {
 import {
   fetchNotes,
   uploadNote,
-  fetchNoteBlob,
+  // fetchNoteBlob, // Not needed as the component handles the fetch
   createChatSession,
   streamChatRequest,
   fetchChatHistory,
@@ -44,7 +45,7 @@ const Notes: React.FC = () => {
   // --- Data State ---
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  // const [pdfUrl, setPdfUrl] = useState<string | null>(null); // <--- REMOVED
 
   // --- Edit/Rename State ---
   const [editingNoteId, setEditingNoteId] = useState<number | null>(null);
@@ -139,7 +140,7 @@ const Notes: React.FC = () => {
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
       if (currentNote?.id === noteId) {
         setCurrentNote(null);
-        setPdfUrl(null);
+        // setPdfUrl(null); // <--- REMOVED
         setMessages([]);
         setSessionId(null);
       }
@@ -191,11 +192,10 @@ const Notes: React.FC = () => {
     setSessionId(null);
     setIsChatOpen(true);
 
-    const token = localStorage.getItem("token");
-
-    const secureUrl = `${getNoteContentUrl(note.id)}?token=${token}`;
-
-    setPdfUrl(secureUrl);
+    // --- PDF VIEWER LOGIC ---
+    // We no longer set pdfUrl state or append the token here.
+    // The SecurePdfViewer component handles the authenticated fetch internally
+    // using the currentNote.id prop.
 
     try {
       const existingSessions = await fetchSessions(note.id);
@@ -225,6 +225,7 @@ const Notes: React.FC = () => {
       console.error("Failed to init chat", error);
     }
   };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !sessionId) return;
     const userMsg = inputMessage;
@@ -405,15 +406,10 @@ const Notes: React.FC = () => {
         </header>
 
         <div className="flex-1 w-full h-full relative p-4">
-          {pdfUrl ? (
+          {currentNote ? (
             <div className="w-full h-full rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-              <iframe
-                src={pdfUrl}
-                className={`w-full h-full border-none ${
-                  isResizing ? "pointer-events-none" : ""
-                }`}
-                title="PDF Viewer"
-              />
+              {/* FIX: Use the SecurePdfViewer component, passing the noteId */}
+              <SecurePdfViewer noteId={currentNote.id} />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-gray-400/50">
