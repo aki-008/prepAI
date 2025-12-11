@@ -84,6 +84,7 @@ const SecurePdfViewer: React.FC<Props> = ({ noteId }) => {
 
         await page.render({
           canvasContext: context,
+          canvas: canvas, // <--- FIX APPLIED HERE
           viewport: viewport,
           transform: transform,
         }).promise;
