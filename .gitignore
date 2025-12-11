@@ -233,3 +233,13 @@ testing
 .sqlite3
 .bin
 chroma_store/chroma.sqlite3
+chroma_store/
+vector_db/
+*.sqlite3
+*.bin
+__pycache__/
+.DS_Store
+.env
+/node_modules
+/Frontend/node_modules
+/Frontend/dist
