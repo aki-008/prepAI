@@ -1,14 +1,11 @@
 #!/bin/bash
-set -e # Exit immediately if any command fails
 
 # --- 1. Dynamic PostgreSQL Path Detection ---
 PG_BIN_DIR=$(find /usr/lib/postgresql -name pg_ctl | head -n 1 | xargs dirname)
-
 if [ -z "$PG_BIN_DIR" ]; then
     echo "❌ Error: Could not find PostgreSQL binaries."
     exit 1
 fi
-
 echo "✅ Found PostgreSQL binaries at $PG_BIN_DIR"
 export PATH="$PG_BIN_DIR:$PATH"
 
@@ -16,14 +13,13 @@ export PATH="$PG_BIN_DIR:$PATH"
 export DATABASE_URL="postgresql+asyncpg://prepuser:password@127.0.0.1:5432/studentdb"
 export PGDATA=/home/user/postgres_data
 export HOME=/home/user
-# ChromaDB settings
 export chroma_host="127.0.0.1"
 export chroma_port="8080"
 export chroma_collection="prepai_collection"
 
 # --- 3. Database Initialization ---
 if [ -d "$PGDATA" ] && [ ! -f "$PGDATA/PG_VERSION" ]; then
-    echo "⚠️  $PGDATA exists but is not a valid cluster. Wiping to start fresh..."
+    echo "⚠️  $PGDATA exists but is not a valid cluster. Wiping..."
     rm -rf "$PGDATA"
 fi
 
@@ -32,22 +28,32 @@ if [ ! -d "$PGDATA" ]; then
     initdb -D "$PGDATA" --auth-local=trust --no-locale --encoding=UTF8
 fi
 
-# --- 4. Start PostgreSQL (With Fixes) ---
+# --- 4. Configure & Start PostgreSQL ---
+# FIX: Explicitly set the socket directory in the config file to avoid /var/run permissions issues
+if ! grep -q "unix_socket_directories" "$PGDATA/postgresql.conf"; then
+    echo "unix_socket_directories = '/tmp'" >> "$PGDATA/postgresql.conf"
+fi
+
+# Remove any stale lock files from previous crashes
+rm -f "$PGDATA/postmaster.pid"
+
 echo "🚀 Starting PostgreSQL..."
-# FIX: Use -o "-k /tmp" to force socket creation in /tmp instead of protected /var/run
-if ! pg_ctl -D "$PGDATA" -l /home/user/postgres.log -o "-k /tmp" start; then
-    echo "❌ PostgreSQL failed to start. Printing logs:"
+# Try to start. If it fails, we continue (no set -e) so we can print logs.
+pg_ctl -D "$PGDATA" -l /home/user/postgres.log start
+
+# Wait a moment for startup...
+sleep 3
+
+# Check if it is actually running
+if ! pg_isready -h 127.0.0.1 -p 5432; then
+    echo "❌ PostgreSQL failed to start. Printing contents of postgres.log:"
+    echo "----------------------------------------------------------------"
     cat /home/user/postgres.log
+    echo "----------------------------------------------------------------"
     exit 1
 fi
 
-# Wait for Postgres to be ready
-echo "⏳ Waiting for PostgreSQL to accept connections..."
-until pg_isready -h 127.0.0.1 -p 5432; do
-    echo "   ...waiting for DB..."
-    sleep 2
-done
-echo "✅ PostgreSQL is up!"
+echo "✅ PostgreSQL is up and accepting connections!"
 
 # --- 5. User & DB Setup ---
 echo "🛠️  Configuring Database..."
@@ -62,13 +68,9 @@ echo "🎨 Setting up ChromaDB..."
 mkdir -p ./chroma_store
 chroma run --host 0.0.0.0 --port 8080 --path ./chroma_store &
 
-# --- 7. Nginx Setup ---
+# --- 7. Nginx Setup (Non-root) ---
 echo "🌐 Starting Nginx..."
-mkdir -p /tmp/nginx/body \
-         /tmp/nginx/proxy \
-         /tmp/nginx/fastcgi \
-         /tmp/nginx/uwsgi \
-         /tmp/nginx/scgi
+mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 
 cat <<EOF > /tmp/nginx.conf
 worker_processes 1;
@@ -89,13 +91,11 @@ http {
     server {
         listen 7860;
         server_name localhost;
-
         location / {
             root /usr/share/nginx/html;
             index index.html index.htm;
             try_files \$uri \$uri/ /index.html;
         }
-
         location /api/v1/ {
             proxy_pass http://127.0.0.1:8000/api/v1/;
             proxy_set_header Host \$host;
