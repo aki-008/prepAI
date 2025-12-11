@@ -18,14 +18,6 @@ class Settings(BaseSettings):
 
     GROQ_API_KEY: str
     
-    # Add Vapi Settings
-    VAPI_PRIVATE_KEY: str
-    VAPI_PUBLIC_KEY: str
-    VAPI_ASSISTANT_ID: str
-
-    VAPI_ASSISTANT_ID: str = "your-vapi-assistant-id"
-    VAPI_PRIVATE_KEY: str
-    VAPI_PUBLIC_KEY: str
 
     VAPI_ASSISTANT_ID: str = "your-vapi-assistant-id"
     VAPI_PRIVATE_KEY: str

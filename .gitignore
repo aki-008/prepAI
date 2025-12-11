@@ -243,3 +243,23 @@ __pycache__/
 /node_modules
 /Frontend/node_modules
 /Frontend/dist
+
+# Ignore Database & Vector Stores
+chroma_store/
+Backend/chroma_store/
+*.sqlite3
+*.bin
+*.db
+
+# Ignore Large Files/Documents
+vector_db/
+*.pdf
+img/
+*.png
+
+# Ignore Python Cache & Envs
+__pycache__/
+*.pyc
+.env
+venv/
+.venv/
