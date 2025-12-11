@@ -2,7 +2,6 @@
 set -e # Exit immediately if any command fails
 
 # --- 1. Dynamic PostgreSQL Path Detection ---
-# Find the directory containing pg_ctl (works for any postgres version)
 PG_BIN_DIR=$(find /usr/lib/postgresql -name pg_ctl | head -n 1 | xargs dirname)
 
 if [ -z "$PG_BIN_DIR" ]; then
@@ -23,7 +22,6 @@ export chroma_port="8080"
 export chroma_collection="prepai_collection"
 
 # --- 3. Database Initialization ---
-# If PGDATA exists but is missing the version file, it's corrupt. Wipe it.
 if [ -d "$PGDATA" ] && [ ! -f "$PGDATA/PG_VERSION" ]; then
     echo "⚠️  $PGDATA exists but is not a valid cluster. Wiping to start fresh..."
     rm -rf "$PGDATA"
@@ -31,15 +29,19 @@ fi
 
 if [ ! -d "$PGDATA" ]; then
     echo "⚙️  Initializing database..."
-    # Initialize with trust auth for local connections to avoid password issues during setup
     initdb -D "$PGDATA" --auth-local=trust --no-locale --encoding=UTF8
 fi
 
-# --- 4. Start PostgreSQL ---
+# --- 4. Start PostgreSQL (With Fixes) ---
 echo "🚀 Starting PostgreSQL..."
-pg_ctl -D "$PGDATA" -l /home/user/postgres.log start
+# FIX: Use -o "-k /tmp" to force socket creation in /tmp instead of protected /var/run
+if ! pg_ctl -D "$PGDATA" -l /home/user/postgres.log -o "-k /tmp" start; then
+    echo "❌ PostgreSQL failed to start. Printing logs:"
+    cat /home/user/postgres.log
+    exit 1
+fi
 
-# CRITICAL: Wait for Postgres to be ready before continuing
+# Wait for Postgres to be ready
 echo "⏳ Waiting for PostgreSQL to accept connections..."
 until pg_isready -h 127.0.0.1 -p 5432; do
     echo "   ...waiting for DB..."
@@ -49,7 +51,6 @@ echo "✅ PostgreSQL is up!"
 
 # --- 5. User & DB Setup ---
 echo "🛠️  Configuring Database..."
-# Idempotent creation: Only create if they don't exist
 psql -h 127.0.0.1 -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='prepuser'" | grep -q 1 || \
 psql -h 127.0.0.1 -d postgres -c "CREATE USER prepuser WITH PASSWORD 'password';"
 
@@ -58,21 +59,17 @@ createdb -h 127.0.0.1 -O prepuser studentdb
 
 # --- 6. ChromaDB Setup ---
 echo "🎨 Setting up ChromaDB..."
-# Ensure directory exists and we own it
 mkdir -p ./chroma_store
-# Start Chroma in the background
 chroma run --host 0.0.0.0 --port 8080 --path ./chroma_store &
 
-# --- 7. Nginx Setup (Non-root Mode) ---
+# --- 7. Nginx Setup ---
 echo "🌐 Starting Nginx..."
-# Create temp directories for Nginx to write to (avoids permission errors)
 mkdir -p /tmp/nginx/body \
          /tmp/nginx/proxy \
          /tmp/nginx/fastcgi \
          /tmp/nginx/uwsgi \
          /tmp/nginx/scgi
 
-# Generate a temporary nginx.conf that listens on port 7860
 cat <<EOF > /tmp/nginx.conf
 worker_processes 1;
 daemon off;
@@ -108,7 +105,6 @@ http {
 }
 EOF
 
-# Start Nginx using the temp config
 nginx -c /tmp/nginx.conf &
 
 # --- 8. Start Backend ---
