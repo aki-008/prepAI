@@ -1,20 +1,66 @@
 #!/bin/bash
-set -e
 
-# --- 1. Set Environment Variables ---
+# --- 1. Dynamic PostgreSQL Path Detection ---
+PG_BIN_DIR=$(find /usr/lib/postgresql -name pg_ctl | head -n 1 | xargs dirname)
+if [ -z "$PG_BIN_DIR" ]; then
+    echo "❌ Error: Could not find PostgreSQL binaries."
+    exit 1
+fi
+echo "✅ Found PostgreSQL binaries at $PG_BIN_DIR"
+export PATH="$PG_BIN_DIR:$PATH"
+
+# --- 2. Set Critical Environment Variables ---
+export DATABASE_URL="postgresql+asyncpg://prepuser:password@127.0.0.1:5432/studentdb"
+export PGDATA=/home/user/postgres_data
 export HOME=/home/user
-# Use the DATABASE_URL from Hugging Face Secrets
-# ChromaDB settings
 export chroma_host="127.0.0.1"
 export chroma_port="8080"
 export chroma_collection="prepai_collection"
 
-# --- 2. Start ChromaDB ---
+# --- 3. Database Initialization ---
+if [ -d "$PGDATA" ] && [ ! -f "$PGDATA/PG_VERSION" ]; then
+    echo "⚠️  $PGDATA exists but is not a valid cluster. Wiping..."
+    rm -rf "$PGDATA"
+fi
+
+if [ ! -d "$PGDATA" ]; then
+    echo "⚙️  Initializing database..."
+    initdb -D "$PGDATA" --auth-local=trust --no-locale --encoding=UTF8
+fi
+
+# --- 4. Start PostgreSQL (With Socket Fix) ---
+echo "🚀 Starting PostgreSQL..."
+# FIX: -o "-k /tmp" forces the socket lock file to be in /tmp (writable) instead of /var/run (protected)
+pg_ctl -D "$PGDATA" -l /home/user/postgres.log -o "-k /tmp" start
+
+# Wait a moment for startup...
+sleep 3
+
+# Check if it is actually running
+if ! pg_isready -h 127.0.0.1 -p 5432; then
+    echo "❌ PostgreSQL failed to start. Printing contents of postgres.log:"
+    echo "----------------------------------------------------------------"
+    cat /home/user/postgres.log
+    echo "----------------------------------------------------------------"
+    exit 1
+fi
+
+echo "✅ PostgreSQL is up and accepting connections!"
+
+# --- 5. User & DB Setup ---
+echo "🛠️  Configuring Database..."
+psql -h 127.0.0.1 -d postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='prepuser'" | grep -q 1 || \
+psql -h 127.0.0.1 -d postgres -c "CREATE USER prepuser WITH PASSWORD 'password';"
+
+psql -h 127.0.0.1 -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='studentdb'" | grep -q 1 || \
+createdb -h 127.0.0.1 -O prepuser studentdb
+
+# --- 6. ChromaDB Setup ---
 echo "🎨 Setting up ChromaDB..."
 mkdir -p ./chroma_store
 chroma run --host 0.0.0.0 --port 8080 --path ./chroma_store &
 
-# --- 3. Start Nginx (Non-root Mode) ---
+# --- 7. Nginx Setup (Non-root) ---
 echo "🌐 Starting Nginx..."
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 
@@ -53,9 +99,7 @@ EOF
 
 nginx -c /tmp/nginx.conf &
 
-# --- 4. Start Backend ---
+# --- 8. Start Backend ---
 echo "🐍 Starting Backend..."
 cd Backend
-# Ensure tables are created in the new remote DB
-# (Your main.py lifespan event handles this via Base.metadata.create_all)
 python run.py
