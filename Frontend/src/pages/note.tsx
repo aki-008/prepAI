@@ -191,7 +191,10 @@ const Notes: React.FC = () => {
     setSessionId(null);
     setIsChatOpen(true);
 
-    const secureUrl = getNoteContentUrl(note.id);
+    const token = localStorage.getItem("token");
+
+    const secureUrl = `${getNoteContentUrl(note.id)}?token=${token}`;
+
     setPdfUrl(secureUrl);
 
     try {
@@ -222,7 +225,6 @@ const Notes: React.FC = () => {
       console.error("Failed to init chat", error);
     }
   };
-
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || !sessionId) return;
     const userMsg = inputMessage;

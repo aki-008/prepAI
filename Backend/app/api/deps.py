@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -9,8 +9,9 @@ from app.config import settings
 from fastapi import Request
 from chromadb import AsyncHttpClient
 from chromadb.api.models.Collection import Collection
+from typing import Optional
 
-security  = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 async def get_db():
     async with async_session_maker() as session:
@@ -25,17 +26,27 @@ async def get_db():
 
 
 async def get_current_user(
-        credentials: HTTPAuthorizationCredentials = Depends(security),
+        credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+        token_query: Optional[str] = Query(None, alias="token"),
         db: AsyncSession = Depends(get_db)
 ) -> User:
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
-        detail="could not validate credentials",
+        detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    try:
+    token = None
+    if credentials:
         token = credentials.credentials
+    elif token_query:
+        token = token_query
+        
+    if not token:
+        raise credentials_exception
+
+    try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
