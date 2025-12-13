@@ -1,3 +1,8 @@
+
+<p align="center">
+  <img src="Gemini_Generated_Image_flv9lqflv9lqflv9.jpg" width="600" />
+</p>
+
 # PrepAI – Intelligent Interview & Notes Assistant
 
 PrepAI is a comprehensive AI-powered platform designed to help users prepare for interviews, generate personalized quizzes, manage study notes, and even participate in real-time mock interviews using conversational AI. It blends multiple modern technologies such as FastAPI, React, ChromaDB, PostgreSQL, Vapi, Groq, and LlamaIndex into a cohesive, production-ready system.
